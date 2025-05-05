@@ -1,0 +1,14 @@
+# 基础科学计算库
+pandas>=1.3
+numpy>=1.21
+scikit-learn>=1.0
+matplotlib>=3.4
+seaborn>=0.11
+networkx>=2.6
+umap-learn>=0.5
+
+# PyTorch 和 PyTorch Geometric（建议使用特定版本兼容性更好）
+torch>=1.10
+torchvision>=0.11
+torchaudio>=0.10
+torch-geometric>=2.0
