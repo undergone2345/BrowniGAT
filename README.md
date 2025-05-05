@@ -34,12 +34,25 @@ pip install pandas torch torch-geometric scikit-learn matplotlib
 
 ```
 BrowniGAT/
+├── README.md
+├── requirements.txt
+├── main.py
+├── model/
+│   └── gat_embed.py
+├── utils/
+│   ├── data_loader.py
+│   ├── loss.py
+│   ├── visualize.py
+│   └── core_target.py
+├── config/
+│   └── config.yaml
 ├── data/
-│   └── string_interactions_short.csv       # STRING PPI data (shortened)
-├── browniGAT.py                             # Main GAT-based pipeline
-├── README.md                                # Project documentation
-└── results/
-    └── core_targets.csv                     # Output ranked targets
+│   └── string_interactions_short.csv
+├── results/
+│   └── core_targets.tsv
+└── notebooks/
+    └── demo_analysis.ipynb
+
 ```
 
 ---
@@ -60,7 +73,7 @@ ACE    AGTR2    9606.ENSP00000290866 9606.ENSP00000360973 0.00 0.0 ...
 ### 2. Run the Pipeline
 
 ```bash
-python browniGAT.py
+python main.py
 ```
 
 ### 3. Output
@@ -127,7 +140,7 @@ If you find this useful, please cite this repo:
 Or acknowledge:
 
 ```text
-Developed by [Your Name], [Your Lab / University].
+Developed by zhuzi.
 Built using PyTorch Geometric and STRING database.
 ```
 
