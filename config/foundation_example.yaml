@@ -32,3 +32,6 @@ foundation:
   sampling:
     steps_per_epoch: 50
     task_temperature: 0.8
+  training:
+    epochs: 3
+    checkpoint_every: 1

@@ -6,6 +6,8 @@ The repository now also includes a `vNext` multi-capability stack that moves bey
 
 It also now includes a third-layer foundation workspace builder that converts canonical multimodal bundles into manifest-driven pretraining workspaces with modality registries, feature specs, task registries, and sampling plans.
 
+The repository now also includes a fourth-layer pretraining trainer skeleton with multimodal batch construction, task heads, checkpoint schema, and epoch-level training orchestration.
+
 ## What This Repository Does
 
 - Loads STRING-like PPI interaction tables and builds a graph.
@@ -59,6 +61,13 @@ It also now includes a third-layer foundation workspace builder that converts ca
 - Added manifest generation and batch sampling plans for multimodal training orchestration.
 - Added tests covering workspace building and bundle loading.
 
+### Version 7: Foundation Trainer Skeleton
+
+- Added multimodal pretraining dataset assembly from workspace manifests.
+- Added task heads for masked node modeling, masked edge modeling, alignment, perturbation conditioning, and spatial context prediction.
+- Added checkpoint schema and per-epoch checkpoint writing.
+- Added a trainer skeleton that writes training history and summary metrics.
+
 ## Repository Layout
 
 ```text
@@ -105,6 +114,7 @@ BrowniGAT/
 |   `-- demo_analysis.ipynb
 |-- benchmark_plot.py
 |-- foundation_main.py
+|-- foundation_train.py
 |-- ingest_multimodal_data.py
 |-- main.py
 |-- tasks/
@@ -195,6 +205,12 @@ Build a foundation-model-ready workspace from a canonical bundle:
 python foundation_main.py --config config/foundation_example.yaml
 ```
 
+Run the foundation trainer skeleton on the workspace:
+
+```bash
+python foundation_train.py --config config/foundation_example.yaml
+```
+
 ## Configuration Overview
 
 Main configurable sections:
@@ -270,6 +286,12 @@ The workspace summary includes:
 - per-task batch sizes
 - a balanced sampling plan for each epoch
 
+The foundation trainer skeleton extends that workspace with:
+
+- `training_history.csv`
+- `training_summary.json`
+- `checkpoints/epoch_*.json`
+
 ## vNext Capability Map
 
 The new `vNext` stack fills the five big capability gaps that a PPI-only system cannot cover:
@@ -325,12 +347,32 @@ This layer adds:
 Core files:
 
 - `foundation_main.py`
+- `foundation_train.py`
 - `utils/modality_registry.py`
 - `utils/feature_specs.py`
 - `utils/task_registry.py`
 - `utils/pretraining_manifest.py`
 - `utils/batch_sampler.py`
 - `utils/foundation_workspace.py`
+
+## Foundation Trainer Layer
+
+The fourth layer is a trainer skeleton that can later be upgraded into a full neural foundation model trainer without rewriting the orchestration stack.
+
+This layer adds:
+
+- workspace-backed multimodal dataset loading
+- task-specific heads with a shared interface
+- batch collation from the sampling plan
+- checkpoint payload schemas for reproducible resumes and audits
+- training history export for future experiment tracking
+
+Core files:
+
+- `utils/foundation_dataset.py`
+- `model/foundation_task_heads.py`
+- `utils/checkpoint_schema.py`
+- `utils/foundation_trainer.py`
 
 ## Baseline Comparison
 
@@ -401,6 +443,7 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - vNext heterogenous graph task flow
 - real-data ingestion and schema validation
 - foundation workspace manifest and sampling-plan generation
+- foundation trainer history and checkpoint generation
 
 ## Suggested Next Extensions
 

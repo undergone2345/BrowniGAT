@@ -21,6 +21,10 @@ DEFAULT_CONFIG = {
             "steps_per_epoch": 50,
             "task_temperature": 1.0,
         },
+        "training": {
+            "epochs": 3,
+            "checkpoint_every": 1,
+        },
     },
     "real_data": {
         "output_dir": "results_real_ingestion",
