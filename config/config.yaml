@@ -1,0 +1,65 @@
+data:
+  path: data/string_interactions_short.csv
+  sep: "\t"
+  source_column: node1
+  target_column: node2
+  weight_column: combined_score
+  min_weight: 0.9
+  make_undirected: true
+  add_self_loops: true
+  feature_mode: identity
+
+model:
+  hidden_channels: 128
+  out_channels: 64
+  heads: 4
+  dropout: 0.15
+
+training:
+  epochs: 120
+  lr: 0.005
+  weight_decay: 0.0001
+  negative_ratio: 2
+  log_every: 10
+
+scoring:
+  target_genes:
+    - TYR
+    - MITF
+    - UCP1
+    - PPARGC1A
+  weights:
+    similarity: 0.45
+    degree: 0.2
+    pagerank: 0.15
+    betweenness: 0.1
+    closeness: 0.1
+  baseline_weights:
+    degree: 0.25
+    weighted_degree: 0.2
+    pagerank: 0.2
+    betweenness: 0.15
+    closeness: 0.1
+    eigenvector: 0.1
+
+benchmark:
+  methods:
+    - gat
+    - gcn
+    - graphsage
+    - centrality
+  top_k: 10
+
+visualization:
+  method: tsne
+  perplexity: 5
+
+reporting:
+  top_k: 20
+
+runtime:
+  seed: 42
+  repeats: 3
+  seed_stride: 17
+  device: cpu
+  output_dir: results
