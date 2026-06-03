@@ -12,6 +12,7 @@ class MultimodalPretrainingDataset:
         self.manifest = self._load_manifest()
         self.bundle = load_canonical_bundle(self.manifest["bundle_dir"])
         self.samples_by_task = self._build_samples()
+        self.splits_by_task = self._build_splits()
 
     def _load_manifest(self):
         manifest_path = self.workspace_dir / "pretraining_manifest.json"
@@ -71,8 +72,11 @@ class MultimodalPretrainingDataset:
     def get_task_samples(self, task_name):
         return self.samples_by_task.get(task_name, [])
 
+    def get_task_split(self, task_name, split_name="train"):
+        return self.splits_by_task.get(task_name, {}).get(split_name, [])
+
     def as_torch_dataset(self, task_name):
-        samples = self.get_task_samples(task_name)
+        samples = self.get_task_split(task_name, "train") or self.get_task_samples(task_name)
         try:
             from torch.utils.data import Dataset
         except ModuleNotFoundError:
@@ -89,6 +93,19 @@ class MultimodalPretrainingDataset:
                 return self.task_samples[idx]
 
         return _TaskDataset(samples)
+
+    def _build_splits(self):
+        splits = {}
+        for task_name, samples in self.samples_by_task.items():
+            if not samples:
+                splits[task_name] = {"train": [], "val": []}
+                continue
+            val_size = max(1, len(samples) // 5)
+            splits[task_name] = {
+                "train": samples[:-val_size] or samples,
+                "val": samples[-val_size:],
+            }
+        return splits
 
 
 def create_batches(samples, batch_size):

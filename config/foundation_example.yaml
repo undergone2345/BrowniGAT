@@ -39,11 +39,21 @@ foundation:
   sampling:
     steps_per_epoch: 50
     task_temperature: 0.8
+    shuffle_tasks_each_epoch: false
+  dataloader:
+    num_workers: 0
+    pin_memory: false
+    shuffle: false
+  validation:
+    max_batches_per_task: 2
   training:
     epochs: 3
     checkpoint_every: 1
     gradient_accumulation_steps: 2
     resume_from_checkpoint: null
+    grad_clip_norm: null
+    use_amp: false
+    log_every_n_steps: 50
   optimizer:
     name: adamw
     lr: 0.0003

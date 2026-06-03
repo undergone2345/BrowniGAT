@@ -47,6 +47,12 @@ foundation:
     steps_per_epoch: 40
     task_temperature: 0.9
     shuffle_tasks_each_epoch: true
+  dataloader:
+    num_workers: 0
+    pin_memory: false
+    shuffle: true
+  validation:
+    max_batches_per_task: 2
   training:
     epochs: 2
     checkpoint_every: 1

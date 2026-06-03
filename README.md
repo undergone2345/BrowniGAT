@@ -88,6 +88,12 @@ The repository now also starts to distinguish two different infrastructure layer
 - Added loss composition, runtime hooks, and run registry for engine-style orchestration.
 - Added engine-oriented foundation config with AMP, grad clipping, and richer runtime metadata.
 
+### Version 10: Training Lifecycle Management
+
+- Added engine dataloader abstraction, validation batches, and best-checkpoint selection.
+- Added resume-from-checkpoint flow that restores step metadata and appends training history.
+- Added runtime logging controls and validation summaries for each epoch.
+
 ## Repository Layout
 
 ```text
@@ -320,6 +326,7 @@ The foundation trainer skeleton extends that workspace with:
 - `checkpoints/epoch_*.json`
 - `experiment_manifest.json`
 - `run_registry.jsonl`
+- `checkpoints/best.json`
 
 ## vNext Capability Map
 
@@ -439,12 +446,21 @@ Current examples:
 - `foundation_main.py`
 - `foundation_train.py`
 - `utils/engine_runtime.py`
+- `utils/engine_dataloader.py`
 - `utils/loss_composer.py`
 - `utils/run_registry.py`
+- `utils/validation_registry.py`
 - resume-ready checkpoint payloads
 - experiment manifests and runtime summaries
 
 The engine layer is still not a production distributed trainer, but it now has the right abstractions for that next jump.
+
+It now also includes:
+
+- validation-time batch construction
+- best-checkpoint persistence
+- resume-aware training loops
+- lifecycle-oriented runtime logging
 
 ## Baseline Comparison
 
@@ -518,6 +534,7 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - foundation trainer history and checkpoint generation
 - advanced foundation training stack orchestration
 - explicit research-infra vs engine-layer testing
+- validation, best-checkpoint, and resume-flow testing
 
 ## Suggested Next Extensions
 

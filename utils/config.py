@@ -9,6 +9,7 @@ DEFAULT_CONFIG = {
         "output_dir": "results_foundation_workspace",
         "experiment": {
             "name": "browning_foundation_pretraining_demo",
+            "mode": "research",
         },
         "backbone": {
             "name": "hetero_graph_transformer",
@@ -28,12 +29,24 @@ DEFAULT_CONFIG = {
         "sampling": {
             "steps_per_epoch": 50,
             "task_temperature": 1.0,
+            "shuffle_tasks_each_epoch": False,
+        },
+        "dataloader": {
+            "num_workers": 0,
+            "pin_memory": False,
+            "shuffle": False,
+        },
+        "validation": {
+            "max_batches_per_task": 2,
         },
         "training": {
             "epochs": 3,
             "checkpoint_every": 1,
             "gradient_accumulation_steps": 1,
             "resume_from_checkpoint": None,
+            "grad_clip_norm": None,
+            "use_amp": False,
+            "log_every_n_steps": 50,
         },
         "optimizer": {
             "name": "adamw",

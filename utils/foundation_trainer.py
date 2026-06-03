@@ -9,6 +9,7 @@ from utils.checkpoint_schema import (
     load_checkpoint_payload,
     save_checkpoint,
 )
+from utils.engine_dataloader import build_engine_dataloader
 from utils.engine_runtime import (
     build_runtime_context,
     execute_training_step,
@@ -21,6 +22,7 @@ from utils.foundation_dataset import (
 )
 from utils.loss_composer import compose_multitask_loss, summarize_loss_components
 from utils.run_registry import append_run_record, build_run_record
+from utils.validation_registry import build_validation_batches, summarize_validation_outputs
 from utils.foundation_workspace import build_foundation_workspace
 from utils.training_components import (
     apply_gradient_accumulation,
@@ -56,6 +58,9 @@ def run_foundation_training(foundation_cfg, workspace_dir):
     start_epoch = 1
     scaler_state = {"amp_enabled": bool(training_cfg.get("use_amp", False))}
     resume_metadata = {"resumed_from": foundation_cfg["training"].get("resume_from_checkpoint")}
+    best_validation_loss = float("inf")
+
+    history_path = workspace_dir / "training_history.csv"
 
     if training_cfg.get("resume_from_checkpoint"):
         checkpoint = load_checkpoint_payload(training_cfg["resume_from_checkpoint"])
@@ -68,6 +73,11 @@ def run_foundation_training(foundation_cfg, workspace_dir):
             "resumed_from": training_cfg["resume_from_checkpoint"],
             "resume_epoch": checkpoint.get("epoch", 0),
         }
+        best_validation_loss = float(
+            checkpoint.get("validation_metrics", {}).get("overall_validation_loss", best_validation_loss)
+        )
+        if history_path.exists():
+            history = pd.read_csv(history_path).to_dict(orient="records")
 
     runtime_context = build_runtime_context(
         foundation_cfg,
@@ -86,10 +96,11 @@ def run_foundation_training(foundation_cfg, workspace_dir):
             shuffle_enabled=foundation_cfg["sampling"].get("shuffle_tasks_each_epoch", False),
             seed=epoch,
         )
+        train_loader = build_engine_dataloader(epoch_batches, foundation_cfg.get("dataloader", {}))
         epoch_metrics = []
         raw_step_metrics = []
         loss_component_rows = []
-        for batch_item in epoch_batches:
+        for batch_item in train_loader:
             step_result = execute_training_step(runtime_context, batch_item)
             task_name = step_result["task_name"]
             output = step_result["task_output"]
@@ -125,6 +136,15 @@ def run_foundation_training(foundation_cfg, workspace_dir):
                     **{k: float(v) for k, v in output.items() if k != "loss"},
                 }
             )
+            if global_step % int(training_cfg.get("log_every_n_steps", 50)) == 0:
+                print(
+                    "[{mode}] step={step} task={task} loss={loss:.4f}".format(
+                        mode=foundation_cfg["experiment"].get("mode", "research"),
+                        step=global_step,
+                        task=task_name,
+                        loss=float(amp_scaled["scaled_loss"]),
+                    )
+                )
         aggregated_step_metrics = apply_gradient_accumulation(
             raw_step_metrics,
             accumulation_steps=int(training_cfg["gradient_accumulation_steps"]),
@@ -133,6 +153,23 @@ def run_foundation_training(foundation_cfg, workspace_dir):
 
         summary_metrics = summarize_epoch_metrics(epoch_metrics)
         summary_metrics["loss_components"] = summarize_loss_components(loss_component_rows)
+        validation_batches = build_validation_batches(
+            dataset,
+            workspace["manifest"]["enabled_tasks"],
+            max_batches_per_task=int(foundation_cfg.get("validation", {}).get("max_batches_per_task", 2)),
+        )
+        validation_rows = []
+        for batch_item in validation_batches:
+            step_result = execute_training_step(runtime_context, batch_item)
+            validation_rows.append(
+                {
+                    "task_name": batch_item["task_name"],
+                    "loss": float(step_result["task_output"]["loss"]),
+                }
+            )
+        validation_metrics = summarize_validation_outputs(validation_rows)
+        is_best = validation_metrics["overall_validation_loss"] <= best_validation_loss
+        best_validation_loss = min(best_validation_loss, validation_metrics["overall_validation_loss"])
         checkpoint_payload = build_checkpoint_payload(
             epoch=epoch,
             global_step=global_step,
@@ -148,15 +185,17 @@ def run_foundation_training(foundation_cfg, workspace_dir):
                 "mode": foundation_cfg["experiment"].get("mode", "research"),
                 "backbone_name": foundation_cfg["backbone"]["name"],
             },
+            validation_metrics=validation_metrics,
+            is_best=is_best,
         )
         if epoch % int(training_cfg["checkpoint_every"]) == 0:
-            save_checkpoint(
-                checkpoint_payload,
-                workspace_dir / "checkpoints" / f"epoch_{epoch:03d}.json",
-            )
+            checkpoint_path = workspace_dir / "checkpoints" / f"epoch_{epoch:03d}.json"
+            save_checkpoint(checkpoint_payload, checkpoint_path)
+            if is_best:
+                save_checkpoint(checkpoint_payload, workspace_dir / "checkpoints" / "best.json")
 
     history_df = pd.DataFrame(history)
-    history_df.to_csv(workspace_dir / "training_history.csv", index=False)
+    history_df.to_csv(history_path, index=False)
 
     summary = {
         **workspace["summary"],
@@ -168,6 +207,7 @@ def run_foundation_training(foundation_cfg, workspace_dir):
         "final_loss_mean": float(history_df["loss"].mean()) if not history_df.empty else 0.0,
         "gradient_accumulation_steps": int(training_cfg["gradient_accumulation_steps"]),
         "resume_from_checkpoint": training_cfg.get("resume_from_checkpoint"),
+        "best_validation_loss": float(best_validation_loss) if best_validation_loss != float("inf") else 0.0,
     }
     latest_checkpoint = workspace_dir / "checkpoints" / f"epoch_{int(training_cfg['epochs']):03d}.json"
     run_record = build_run_record(

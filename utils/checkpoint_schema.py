@@ -15,6 +15,8 @@ def build_checkpoint_payload(
     resume_metadata=None,
     scaler_state=None,
     engine_state=None,
+    validation_metrics=None,
+    is_best=False,
 ):
     return {
         "checkpoint_version": 1,
@@ -30,6 +32,8 @@ def build_checkpoint_payload(
         "resume_metadata": resume_metadata or {},
         "scaler_state": scaler_state or {},
         "engine_state": engine_state or {},
+        "validation_metrics": validation_metrics or {},
+        "is_best": bool(is_best),
     }
 
 
