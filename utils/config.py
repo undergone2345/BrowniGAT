@@ -4,6 +4,24 @@ import yaml
 
 
 DEFAULT_CONFIG = {
+    "foundation": {
+        "source_bundle_dir": "results_real_ingestion",
+        "output_dir": "results_foundation_workspace",
+        "tokenizer": {
+            "gene_symbol_case": "upper",
+            "split_characters": False,
+            "reserve_special_tokens": ["[PAD]", "[MASK]", "[CLS]"],
+        },
+        "modalities": {"include": []},
+        "tasks": {
+            "enabled": [],
+            "batch_size_per_task": {},
+        },
+        "sampling": {
+            "steps_per_epoch": 50,
+            "task_temperature": 1.0,
+        },
+    },
     "real_data": {
         "output_dir": "results_real_ingestion",
         "entity_normalization": {

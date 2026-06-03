@@ -1,0 +1,34 @@
+foundation:
+  source_bundle_dir: results_real_ingestion
+  output_dir: results_foundation_workspace
+  tokenizer:
+    gene_symbol_case: upper
+    split_characters: false
+    reserve_special_tokens:
+      - [PAD]
+      - [MASK]
+      - [CLS]
+      - [EDGE]
+      - [REGION]
+  modalities:
+    include:
+      - drug_target
+      - disease_gene
+      - pathway
+      - spatial
+  tasks:
+    enabled:
+      - masked_node_modeling
+      - masked_edge_modeling
+      - cross_modal_alignment
+      - perturbation_conditioning
+      - spatial_context_prediction
+    batch_size_per_task:
+      masked_node_modeling: 256
+      masked_edge_modeling: 256
+      cross_modal_alignment: 192
+      perturbation_conditioning: 128
+      spatial_context_prediction: 128
+  sampling:
+    steps_per_epoch: 50
+    task_temperature: 0.8

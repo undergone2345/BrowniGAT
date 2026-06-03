@@ -4,6 +4,8 @@ BrowniGAT is a graph representation learning framework for discovering anti-brow
 
 The repository now also includes a `vNext` multi-capability stack that moves beyond PPI-only ranking into heterogenous graph reasoning, perturbation forecasting, spatial context prioritization, drug repurposing, and causal target ranking.
 
+It also now includes a third-layer foundation workspace builder that converts canonical multimodal bundles into manifest-driven pretraining workspaces with modality registries, feature specs, task registries, and sampling plans.
+
 ## What This Repository Does
 
 - Loads STRING-like PPI interaction tables and builds a graph.
@@ -50,12 +52,20 @@ The repository now also includes a `vNext` multi-capability stack that moves bey
 - Added mechanism-aware drug repurposing outputs.
 - Added causal ranking with evidence paths and uncertainty penalties.
 
+### Version 6: Foundation Workspace Layer
+
+- Added canonical-to-foundation workspace conversion for large-scale multimodal pretraining.
+- Added modality registry, feature specification registry, and pretraining task registry.
+- Added manifest generation and batch sampling plans for multimodal training orchestration.
+- Added tests covering workspace building and bundle loading.
+
 ## Repository Layout
 
 ```text
 BrowniGAT/
 |-- config/
 |   |-- config.yaml
+|   |-- foundation_example.yaml
 |   |-- real_data_example.yaml
 |   `-- toy_config.yaml
 |-- data/
@@ -94,6 +104,7 @@ BrowniGAT/
 |-- notebooks/
 |   `-- demo_analysis.ipynb
 |-- benchmark_plot.py
+|-- foundation_main.py
 |-- ingest_multimodal_data.py
 |-- main.py
 |-- tasks/
@@ -178,6 +189,12 @@ Build a canonical real-data bundle from standardized modality tables:
 python ingest_multimodal_data.py --config config/real_data_example.yaml
 ```
 
+Build a foundation-model-ready workspace from a canonical bundle:
+
+```bash
+python foundation_main.py --config config/foundation_example.yaml
+```
+
 ## Configuration Overview
 
 Main configurable sections:
@@ -240,6 +257,19 @@ The real-data ingestion pipeline writes a canonical bundle under `results_real_i
 - `foundation_manifest.json`
 - `ingestion_summary.json`
 
+The foundation workspace builder writes a pretraining-oriented workspace under `results_foundation_workspace/`:
+
+- `pretraining_manifest.json`
+- `workspace_summary.json`
+
+The workspace summary includes:
+
+- enabled modalities
+- enabled pretraining tasks
+- vocabulary sizes
+- per-task batch sizes
+- a balanced sampling plan for each epoch
+
 ## vNext Capability Map
 
 The new `vNext` stack fills the five big capability gaps that a PPI-only system cannot cover:
@@ -279,6 +309,28 @@ This ingestion layer adds:
 - a foundation-ready manifest describing the canonical bundle
 
 The main example config is `config/real_data_example.yaml`, and template tables live in `data/real_templates/`.
+
+## Foundation Workspace Layer
+
+The third layer of the repository is designed to bridge canonical biological bundles into large-scale foundation-model training infrastructure.
+
+This layer adds:
+
+- a modality registry for pharmacology, disease, pathway, and spatial inputs
+- a feature spec registry describing categorical and continuous model features
+- a pretraining task registry for multimodal self-supervision and alignment
+- a sampling-plan builder that allocates epoch steps across tasks
+- a manifest builder that records vocabularies, tasks, and dataset statistics
+
+Core files:
+
+- `foundation_main.py`
+- `utils/modality_registry.py`
+- `utils/feature_specs.py`
+- `utils/task_registry.py`
+- `utils/pretraining_manifest.py`
+- `utils/batch_sampler.py`
+- `utils/foundation_workspace.py`
 
 ## Baseline Comparison
 
@@ -348,6 +400,7 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - toy config loading
 - vNext heterogenous graph task flow
 - real-data ingestion and schema validation
+- foundation workspace manifest and sampling-plan generation
 
 ## Suggested Next Extensions
 
