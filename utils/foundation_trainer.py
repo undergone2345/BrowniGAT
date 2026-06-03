@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from model.foundation_backbone import build_foundation_backbone
+from utils.artifact_index import build_artifact_index, save_artifact_index
 from model.foundation_task_heads import build_task_head
 from utils.checkpoint_schema import (
     build_checkpoint_payload,
@@ -10,6 +11,8 @@ from utils.checkpoint_schema import (
     save_checkpoint,
 )
 from utils.engine_dataloader import build_engine_dataloader
+from utils.engine_dataloader import describe_dataloader
+from utils.early_stopping import initialize_early_stopping, update_early_stopping
 from utils.engine_runtime import (
     build_runtime_context,
     execute_training_step,
@@ -21,7 +24,9 @@ from utils.foundation_dataset import (
     build_epoch_batches,
 )
 from utils.loss_composer import compose_multitask_loss, summarize_loss_components
+from utils.reporting import save_run_metadata
 from utils.run_registry import append_run_record, build_run_record
+from utils.sampler_plan import build_task_sampling_sequence
 from utils.validation_registry import build_validation_batches, summarize_validation_outputs
 from utils.foundation_workspace import build_foundation_workspace
 from utils.training_components import (
@@ -59,6 +64,13 @@ def run_foundation_training(foundation_cfg, workspace_dir):
     scaler_state = {"amp_enabled": bool(training_cfg.get("use_amp", False))}
     resume_metadata = {"resumed_from": foundation_cfg["training"].get("resume_from_checkpoint")}
     best_validation_loss = float("inf")
+    early_stopping_state = initialize_early_stopping(
+        patience=foundation_cfg.get("early_stopping", {}).get("patience", 0),
+        min_delta=foundation_cfg.get("early_stopping", {}).get("min_delta", 0.0),
+    )
+    last_completed_epoch = max(0, start_epoch - 1)
+    latest_checkpoint_path = None
+    best_checkpoint_path = None
 
     history_path = workspace_dir / "training_history.csv"
 
@@ -76,6 +88,7 @@ def run_foundation_training(foundation_cfg, workspace_dir):
         best_validation_loss = float(
             checkpoint.get("validation_metrics", {}).get("overall_validation_loss", best_validation_loss)
         )
+        early_stopping_state = checkpoint.get("early_stopping_state", early_stopping_state)
         if history_path.exists():
             history = pd.read_csv(history_path).to_dict(orient="records")
 
@@ -90,7 +103,11 @@ def run_foundation_training(foundation_cfg, workspace_dir):
     )
 
     for epoch in range(start_epoch, int(training_cfg["epochs"]) + 1):
-        epoch_batches = build_epoch_batches(dataset, workspace["sampling_plan"])
+        task_sequence = build_task_sampling_sequence(
+            workspace["sampling_plan"],
+            repeat_strategy=foundation_cfg.get("sampling", {}).get("repeat_strategy", "round_robin"),
+        )
+        epoch_batches = build_epoch_batches(dataset, workspace["sampling_plan"], task_sequence=task_sequence)
         epoch_batches = maybe_shuffle_epoch_batches(
             epoch_batches,
             shuffle_enabled=foundation_cfg["sampling"].get("shuffle_tasks_each_epoch", False),
@@ -170,6 +187,12 @@ def run_foundation_training(foundation_cfg, workspace_dir):
         validation_metrics = summarize_validation_outputs(validation_rows)
         is_best = validation_metrics["overall_validation_loss"] <= best_validation_loss
         best_validation_loss = min(best_validation_loss, validation_metrics["overall_validation_loss"])
+        early_stopping_state = update_early_stopping(
+            early_stopping_state,
+            current_score=validation_metrics["selection_metric"],
+            epoch=epoch,
+            mode=foundation_cfg.get("early_stopping", {}).get("mode", "min"),
+        )
         checkpoint_payload = build_checkpoint_payload(
             epoch=epoch,
             global_step=global_step,
@@ -187,35 +210,62 @@ def run_foundation_training(foundation_cfg, workspace_dir):
             },
             validation_metrics=validation_metrics,
             is_best=is_best,
+            early_stopping_state=early_stopping_state,
         )
         if epoch % int(training_cfg["checkpoint_every"]) == 0:
             checkpoint_path = workspace_dir / "checkpoints" / f"epoch_{epoch:03d}.json"
             save_checkpoint(checkpoint_payload, checkpoint_path)
+            latest_checkpoint_path = checkpoint_path
             if is_best:
-                save_checkpoint(checkpoint_payload, workspace_dir / "checkpoints" / "best.json")
+                best_checkpoint_path = workspace_dir / "checkpoints" / "best.json"
+                save_checkpoint(checkpoint_payload, best_checkpoint_path)
+        last_completed_epoch = epoch
+        if early_stopping_state.get("should_stop", False):
+            break
 
     history_df = pd.DataFrame(history)
     history_df.to_csv(history_path, index=False)
+
+    if latest_checkpoint_path is None and last_completed_epoch > 0:
+        fallback_checkpoint = workspace_dir / "checkpoints" / f"epoch_{last_completed_epoch:03d}.json"
+        if fallback_checkpoint.exists():
+            latest_checkpoint_path = fallback_checkpoint
+    if best_checkpoint_path is None:
+        candidate_best = workspace_dir / "checkpoints" / "best.json"
+        if candidate_best.exists():
+            best_checkpoint_path = candidate_best
 
     summary = {
         **workspace["summary"],
         "mode": foundation_cfg["experiment"].get("mode", "research"),
         "backbone_name": foundation_cfg["backbone"]["name"],
         "epochs": int(training_cfg["epochs"]),
+        "completed_epochs": int(last_completed_epoch),
         "global_steps": int(global_step),
         "checkpoint_dir": str(workspace_dir / "checkpoints"),
         "final_loss_mean": float(history_df["loss"].mean()) if not history_df.empty else 0.0,
         "gradient_accumulation_steps": int(training_cfg["gradient_accumulation_steps"]),
         "resume_from_checkpoint": training_cfg.get("resume_from_checkpoint"),
         "best_validation_loss": float(best_validation_loss) if best_validation_loss != float("inf") else 0.0,
+        "best_epoch": early_stopping_state.get("best_epoch"),
+        "early_stopped": bool(early_stopping_state.get("should_stop", False)),
+        "latest_checkpoint": str(latest_checkpoint_path) if latest_checkpoint_path else None,
+        "best_checkpoint": str(best_checkpoint_path) if best_checkpoint_path else None,
+        "dataloader": describe_dataloader(
+            foundation_cfg.get("dataloader", {}),
+            total_batches=sum(item["steps"] for item in workspace["sampling_plan"]),
+        ),
+        "sampling_strategy": foundation_cfg.get("sampling", {}).get("repeat_strategy", "round_robin"),
     }
-    latest_checkpoint = workspace_dir / "checkpoints" / f"epoch_{int(training_cfg['epochs']):03d}.json"
+    save_run_metadata(summary, workspace_dir / "training_summary.json")
     run_record = build_run_record(
         experiment_manifest=experiment_manifest,
         training_summary=summary,
-        latest_checkpoint=latest_checkpoint,
+        latest_checkpoint=summary["latest_checkpoint"] or "",
     )
     append_run_record(workspace_dir, run_record)
+    artifact_index = build_artifact_index(workspace_dir, summary)
+    save_artifact_index(artifact_index, workspace_dir / "artifact_index.json")
     return {
         "workspace": workspace,
         "history_df": history_df,

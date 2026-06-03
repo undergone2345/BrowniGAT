@@ -22,3 +22,13 @@ def build_engine_dataloader(epoch_batches, dataloader_cfg):
         return SimpleBatchLoader(epoch_batches)
 
     return SimpleBatchLoader(epoch_batches)
+
+
+def describe_dataloader(dataloader_cfg, total_batches):
+    return {
+        "num_workers": int(dataloader_cfg.get("num_workers", 0)),
+        "pin_memory": bool(dataloader_cfg.get("pin_memory", False)),
+        "shuffle": bool(dataloader_cfg.get("shuffle", False)),
+        "prefetch_factor": dataloader_cfg.get("prefetch_factor"),
+        "total_batches": int(total_batches),
+    }

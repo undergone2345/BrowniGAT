@@ -25,10 +25,11 @@ def build_validation_batches(dataset, enabled_tasks, max_batches_per_task=2):
 
 def summarize_validation_outputs(validation_rows):
     if not validation_rows:
-        return {"overall_validation_loss": 0.0, "task_validation_losses": []}
+        return {"overall_validation_loss": 0.0, "task_validation_losses": [], "selection_metric": 0.0}
     frame = pd.DataFrame(validation_rows)
     grouped = frame.groupby("task_name", as_index=False)["loss"].mean()
     return {
         "overall_validation_loss": float(frame["loss"].mean()),
         "task_validation_losses": grouped.to_dict(orient="records"),
+        "selection_metric": float(frame["loss"].mean()),
     }

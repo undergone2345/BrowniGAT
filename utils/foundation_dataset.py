@@ -117,22 +117,33 @@ def create_batches(samples, batch_size):
     ]
 
 
-def build_epoch_batches(dataset, sampling_plan):
+def build_epoch_batches(dataset, sampling_plan, task_sequence=None):
     epoch_batches = []
-    for plan_item in sampling_plan:
-        task_name = plan_item["task_name"]
+    if task_sequence is None:
+        task_sequence = []
+        for plan_item in sampling_plan:
+            for step_idx in range(plan_item["steps"]):
+                task_sequence.append(
+                    {
+                        "task_name": plan_item["task_name"],
+                        "step_index": step_idx,
+                        "batch_size": plan_item["batch_size"],
+                    }
+                )
+
+    for sequence_item in task_sequence:
+        task_name = sequence_item["task_name"]
         task_samples = dataset.get_task_samples(task_name)
         if not task_samples:
             continue
-        base_batches = create_batches(task_samples, plan_item["batch_size"])
-        for step_idx in range(plan_item["steps"]):
-            epoch_batches.append(
-                {
-                    "task_name": task_name,
-                    "step_index": step_idx,
-                    "batch": base_batches[step_idx % len(base_batches)],
-                }
-            )
+        base_batches = create_batches(task_samples, sequence_item["batch_size"])
+        epoch_batches.append(
+            {
+                "task_name": task_name,
+                "step_index": sequence_item["step_index"],
+                "batch": base_batches[sequence_item["step_index"] % len(base_batches)],
+            }
+        )
     return epoch_batches
 
 

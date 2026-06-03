@@ -94,6 +94,13 @@ The repository now also starts to distinguish two different infrastructure layer
 - Added resume-from-checkpoint flow that restores step metadata and appends training history.
 - Added runtime logging controls and validation summaries for each epoch.
 
+### Version 11: Artifactized Engine Runtime
+
+- Added task sampling sequence planning so engine runs can control repeat policy independently from dataset layout.
+- Added early stopping state tracking with best-epoch metadata persisted into checkpoints.
+- Added artifact index generation so downstream tooling can discover summaries, manifests, and checkpoint outputs reliably.
+- Added richer training summaries with actual completed epochs, dataloader settings, and final checkpoint resolution.
+
 ## Repository Layout
 
 ```text
@@ -461,6 +468,9 @@ It now also includes:
 - best-checkpoint persistence
 - resume-aware training loops
 - lifecycle-oriented runtime logging
+- sampling-plan driven task sequencing
+- early-stopping policies with persisted state
+- artifact index generation for training outputs
 
 ## Baseline Comparison
 
@@ -535,6 +545,7 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - advanced foundation training stack orchestration
 - explicit research-infra vs engine-layer testing
 - validation, best-checkpoint, and resume-flow testing
+- artifact index and early-stopping lifecycle testing
 
 ## Suggested Next Extensions
 

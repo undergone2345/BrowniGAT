@@ -17,6 +17,7 @@ def build_checkpoint_payload(
     engine_state=None,
     validation_metrics=None,
     is_best=False,
+    early_stopping_state=None,
 ):
     return {
         "checkpoint_version": 1,
@@ -34,6 +35,7 @@ def build_checkpoint_payload(
         "engine_state": engine_state or {},
         "validation_metrics": validation_metrics or {},
         "is_best": bool(is_best),
+        "early_stopping_state": early_stopping_state or {},
     }
 
 

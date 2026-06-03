@@ -30,14 +30,21 @@ DEFAULT_CONFIG = {
             "steps_per_epoch": 50,
             "task_temperature": 1.0,
             "shuffle_tasks_each_epoch": False,
+            "repeat_strategy": "round_robin",
         },
         "dataloader": {
             "num_workers": 0,
             "pin_memory": False,
             "shuffle": False,
+            "prefetch_factor": None,
         },
         "validation": {
             "max_batches_per_task": 2,
+        },
+        "early_stopping": {
+            "patience": 0,
+            "min_delta": 0.0,
+            "mode": "min",
         },
         "training": {
             "epochs": 3,
