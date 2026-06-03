@@ -13,6 +13,8 @@ def build_checkpoint_payload(
     optimizer_state=None,
     scheduler_state=None,
     resume_metadata=None,
+    scaler_state=None,
+    engine_state=None,
 ):
     return {
         "checkpoint_version": 1,
@@ -26,7 +28,15 @@ def build_checkpoint_payload(
         "optimizer_state": optimizer_state or {},
         "scheduler_state": scheduler_state or {},
         "resume_metadata": resume_metadata or {},
+        "scaler_state": scaler_state or {},
+        "engine_state": engine_state or {},
     }
+
+
+def load_checkpoint_payload(checkpoint_path):
+    checkpoint_path = Path(checkpoint_path)
+    with checkpoint_path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
 
 
 def save_checkpoint(payload, output_path):

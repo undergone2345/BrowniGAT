@@ -1,13 +1,13 @@
 foundation:
   source_bundle_dir: results_real_ingestion
-  output_dir: results_foundation_workspace
+  output_dir: results_foundation_engine
   experiment:
-    name: browning_foundation_pretraining_demo
-    mode: research
+    name: browning_foundation_engine_demo
+    mode: engine
   backbone:
     name: hetero_graph_transformer
-    hidden_dim: 256
-    num_layers: 6
+    hidden_dim: 384
+    num_layers: 8
   tokenizer:
     gene_symbol_case: upper
     split_characters: false
@@ -17,6 +17,7 @@ foundation:
       - [CLS]
       - [EDGE]
       - [REGION]
+      - [DRUG]
   modalities:
     include:
       - drug_target
@@ -31,24 +32,37 @@ foundation:
       - perturbation_conditioning
       - spatial_context_prediction
     batch_size_per_task:
-      masked_node_modeling: 256
-      masked_edge_modeling: 256
-      cross_modal_alignment: 192
-      perturbation_conditioning: 128
-      spatial_context_prediction: 128
+      masked_node_modeling: 128
+      masked_edge_modeling: 128
+      cross_modal_alignment: 96
+      perturbation_conditioning: 64
+      spatial_context_prediction: 64
+    loss_weights:
+      masked_node_modeling: 1.0
+      masked_edge_modeling: 1.0
+      cross_modal_alignment: 0.8
+      perturbation_conditioning: 1.2
+      spatial_context_prediction: 0.9
   sampling:
-    steps_per_epoch: 50
-    task_temperature: 0.8
+    steps_per_epoch: 40
+    task_temperature: 0.9
+    shuffle_tasks_each_epoch: true
   training:
-    epochs: 3
+    epochs: 2
     checkpoint_every: 1
     gradient_accumulation_steps: 2
     resume_from_checkpoint: null
+    grad_clip_norm: 1.0
+    use_amp: true
+    log_every_n_steps: 10
   optimizer:
     name: adamw
-    lr: 0.0003
+    lr: 0.0002
     weight_decay: 0.01
+    betas:
+      - 0.9
+      - 0.95
   scheduler:
     name: cosine_with_warmup
-    warmup_steps: 20
+    warmup_steps: 10
     min_lr_ratio: 0.1

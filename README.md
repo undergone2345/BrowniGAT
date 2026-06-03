@@ -10,6 +10,11 @@ The repository now also includes a fourth-layer pretraining trainer skeleton wit
 
 It now also includes a fifth-layer training stack upgrade with configurable backbones, experiment manifests, optimizer and scheduler stubs, gradient accumulation, and richer resume-ready checkpoint metadata.
 
+The repository now also starts to distinguish two different infrastructure layers explicitly:
+
+- `research infra`: flexible, iteration-friendly experimentation utilities
+- `engine`: resume-aware, registry-aware, training-runtime oriented infrastructure for scaling
+
 ## What This Repository Does
 
 - Loads STRING-like PPI interaction tables and builds a graph.
@@ -77,6 +82,12 @@ It now also includes a fifth-layer training stack upgrade with configurable back
 - Added optimizer and scheduler stubs to mirror real pretraining systems.
 - Added gradient accumulation and richer checkpoint metadata for resume-ready workflows.
 
+### Version 9: Research Infra vs Engine Split
+
+- Added explicit experiment modes for `research` and `engine`.
+- Added loss composition, runtime hooks, and run registry for engine-style orchestration.
+- Added engine-oriented foundation config with AMP, grad clipping, and richer runtime metadata.
+
 ## Repository Layout
 
 ```text
@@ -124,6 +135,7 @@ BrowniGAT/
 |-- benchmark_plot.py
 |-- foundation_main.py
 |-- foundation_train.py
+|-- config/foundation_engine_example.yaml
 |-- ingest_multimodal_data.py
 |-- main.py
 |-- tasks/
@@ -220,6 +232,12 @@ Run the foundation trainer skeleton on the workspace:
 python foundation_train.py --config config/foundation_example.yaml
 ```
 
+Run the more engine-oriented training stack:
+
+```bash
+python foundation_train.py --config config/foundation_engine_example.yaml
+```
+
 ## Configuration Overview
 
 Main configurable sections:
@@ -301,6 +319,7 @@ The foundation trainer skeleton extends that workspace with:
 - `training_summary.json`
 - `checkpoints/epoch_*.json`
 - `experiment_manifest.json`
+- `run_registry.jsonl`
 
 ## vNext Capability Map
 
@@ -396,6 +415,37 @@ The current stack is still a trainer skeleton rather than a full large-scale neu
 - checkpoint payloads with resume metadata
 - experiment-level manifests
 
+## Research Infra vs Engine
+
+The repository now explicitly separates two operational layers:
+
+### Research Infra
+
+Use this when the goal is to iterate quickly on ideas, tasks, scoring heads, and multimodal schema decisions.
+
+Current examples:
+
+- `vnext_main.py`
+- toy multimodal datasets
+- heterogenous graph task modules
+- lightweight task-head prototypes
+
+### Engine
+
+Use this when the goal is to make training workflows more reproducible, resumable, and eventually scalable.
+
+Current examples:
+
+- `foundation_main.py`
+- `foundation_train.py`
+- `utils/engine_runtime.py`
+- `utils/loss_composer.py`
+- `utils/run_registry.py`
+- resume-ready checkpoint payloads
+- experiment manifests and runtime summaries
+
+The engine layer is still not a production distributed trainer, but it now has the right abstractions for that next jump.
+
 ## Baseline Comparison
 
 The project now compares four methods by default:
@@ -467,6 +517,7 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - foundation workspace manifest and sampling-plan generation
 - foundation trainer history and checkpoint generation
 - advanced foundation training stack orchestration
+- explicit research-infra vs engine-layer testing
 
 ## Suggested Next Extensions
 

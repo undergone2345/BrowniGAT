@@ -6,6 +6,7 @@ import json
 def build_experiment_manifest(foundation_cfg, workspace_dir, workspace_summary):
     return {
         "experiment_name": foundation_cfg["experiment"]["name"],
+        "config_snapshot": foundation_cfg,
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "workspace_dir": str(Path(workspace_dir).resolve()),
         "backbone": foundation_cfg["backbone"],
