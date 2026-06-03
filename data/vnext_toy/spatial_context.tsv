@@ -1,0 +1,8 @@
+region	cell_type	target	region_score	cell_type_score	disease_hotspot_score
+epidermis_edge	melanocyte	TYR	0.84	0.97	0.89
+epidermis_edge	melanocyte	MITF	0.88	0.99	0.92
+inflamed_melanocyte_niche	melanocyte	MITF	0.96	0.99	0.97
+inflamed_melanocyte_niche	melanocyte	MLANA	0.85	0.91	0.88
+inflamed_melanocyte_niche	adipocyte	PPARGC1A	0.72	0.88	0.81
+thermogenic_fat_patch	adipocyte	UCP1	0.98	0.96	0.86
+thermogenic_fat_patch	adipocyte	PPARGC1A	0.9	0.89	0.83

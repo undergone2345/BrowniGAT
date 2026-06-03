@@ -1,0 +1,48 @@
+data:
+  path: data/toy_string_interactions.tsv
+  sep: "\t"
+  source_column: node1
+  target_column: node2
+  weight_column: combined_score
+  min_weight: 0.88
+  make_undirected: true
+  add_self_loops: true
+  feature_mode: identity
+
+model:
+  hidden_channels: 32
+  out_channels: 16
+  heads: 2
+  dropout: 0.1
+
+training:
+  epochs: 20
+  lr: 0.01
+  weight_decay: 0.0001
+  negative_ratio: 1
+  log_every: 5
+
+scoring:
+  target_genes:
+    - TYR
+    - MITF
+    - UCP1
+    - PPARGC1A
+
+benchmark:
+  methods:
+    - gat
+    - gcn
+    - graphsage
+    - centrality
+  top_k: 5
+
+reporting:
+  top_k: 8
+
+runtime:
+  seed: 7
+  repeats: 1
+  seed_stride: 1
+  device: cpu
+  output_dir: results_toy

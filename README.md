@@ -2,6 +2,8 @@
 
 BrowniGAT is a graph representation learning framework for discovering anti-browning core targets from protein-protein interaction networks. The project now supports configuration-driven training, graph topology baselines, repeated experiments, aggregated ranking, network auditing, richer result exports, and direct method comparison across multiple GNN backbones.
 
+The repository now also includes a `vNext` multi-capability stack that moves beyond PPI-only ranking into heterogenous graph reasoning, perturbation forecasting, spatial context prioritization, drug repurposing, and causal target ranking.
+
 ## What This Repository Does
 
 - Loads STRING-like PPI interaction tables and builds a graph.
@@ -40,22 +42,39 @@ BrowniGAT is a graph representation learning framework for discovering anti-brow
 - Added leave-one-target-out recovery benchmarking for method comparison.
 - Added per-method output directories and cross-method aggregate summaries.
 
+### Version 5: vNext Multi-Capability Platform
+
+- Added a heterogenous graph pipeline with genes, drugs, disease, pathways, cell types, and spatial regions.
+- Added perturbation-aware forecasting based on intervention signatures.
+- Added spatial and cell-type aware target scoring.
+- Added mechanism-aware drug repurposing outputs.
+- Added causal ranking with evidence paths and uncertainty penalties.
+
 ## Repository Layout
 
 ```text
 BrowniGAT/
 |-- config/
-|   `-- config.yaml
+|   |-- config.yaml
+|   `-- toy_config.yaml
 |-- data/
-|   `-- string_interactions_short.csv
+|   |-- string_interactions_short.csv
+|   |-- toy_string_interactions.tsv
+|   `-- vnext_toy/
 |-- model/
 |   |-- gat_embed.py
 |   |-- gcn_embed.py
 |   `-- graphsage_embed.py
+|-- tests/
+|   |-- test_aggregation.py
+|   |-- test_benchmark_plotting.py
+|   |-- test_config_and_baselines.py
+|   `-- test_vnext_pipeline.py
 |-- utils/
 |   |-- aggregation.py
 |   |-- baselines.py
 |   |-- benchmark.py
+|   |-- benchmark_plotting.py
 |   |-- config.py
 |   |-- core_target.py
 |   |-- data_loader.py
@@ -66,11 +85,16 @@ BrowniGAT/
 |   |-- reporting.py
 |   |-- seed.py
 |   |-- trainer.py
+|   |-- vnext_config.py
+|   |-- vnext_reporting.py
 |   `-- visualize.py
 |-- results/
 |-- notebooks/
 |   `-- demo_analysis.ipynb
+|-- benchmark_plot.py
 |-- main.py
+|-- tasks/
+|-- vnext_main.py
 |-- README.md
 `-- requirements.txt
 ```
@@ -121,6 +145,30 @@ Override the device or output directory:
 python main.py --device cpu --output-dir results/demo_run
 ```
 
+Run the toy example:
+
+```bash
+python main.py --config config/toy_config.yaml
+```
+
+Regenerate benchmark plots from existing result tables:
+
+```bash
+python benchmark_plot.py --output-dir results/method_comparison/plots
+```
+
+Run the lightweight test suite:
+
+```bash
+python -m unittest discover -s tests
+```
+
+Run the vNext multi-capability toy pipeline:
+
+```bash
+python vnext_main.py --config config/vnext_toy.yaml
+```
+
 ## Configuration Overview
 
 Main configurable sections:
@@ -161,6 +209,38 @@ The root comparison directory also includes:
 - `method_comparison/benchmark_summary.md`
 - `method_comparison/aggregate_overview.tsv`
 - `method_comparison/<method>/aggregate_rankings.tsv`
+- `method_comparison/plots/benchmark_summary.png`
+- `method_comparison/plots/aggregate_overview.png`
+
+The `vNext` pipeline writes a separate result bundle under `results_vnext/`:
+
+- `target_prioritization.tsv`
+- `perturbation_forecast.tsv`
+- `spatial_targeting.tsv`
+- `drug_repurposing.tsv`
+- `causal_ranking.tsv`
+- `vnext_summary.json`
+- `REPORT.md`
+- `plots/*.png`
+
+## vNext Capability Map
+
+The new `vNext` stack fills the five big capability gaps that a PPI-only system cannot cover:
+
+1. Heterogenous biomedical graph reasoning
+   Genes, pathways, drugs, disease states, cell types, and spatial regions now live in one graph.
+
+2. Perturbation forecasting
+   The pipeline estimates which interventions are most likely to reverse disease programs.
+
+3. Spatial and cell-type specificity
+   Targets are scored in disease-relevant microenvironments rather than only on a global graph.
+
+4. Drug repurposing
+   The system proposes compounds linked to prioritized targets and disease reversal support.
+
+5. Causal ranking
+   Final target ranking integrates stability, intervention evidence, context specificity, druggability, and uncertainty.
 
 ## Baseline Comparison
 
@@ -210,6 +290,25 @@ Each ranked protein now includes:
 - `EvidenceTag`
 
 This makes it easier to understand whether a candidate is target-like, hub-like, or both.
+
+## Toy Dataset And Testing
+
+The repository now includes a compact toy interaction network in `data/toy_string_interactions.tsv`.
+
+This toy dataset is designed for:
+
+- quick sanity checks on ranking logic
+- small benchmark smoke runs
+- local experiments before switching to full STRING-scale data
+
+The `tests/` directory focuses on maintenance-friendly checks that do not require a full GNN runtime:
+
+- ranking aggregation behavior
+- centrality baseline scoring
+- benchmark summary aggregation
+- benchmark plotting output generation
+- toy config loading
+- vNext heterogenous graph task flow
 
 ## Suggested Next Extensions
 

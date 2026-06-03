@@ -238,6 +238,7 @@ def run_single_experiment(config, output_dir, device, seed):
 def run_pipeline(config_path, device_override=None, output_dir_override=None):
     from utils.aggregation import aggregate_rankings, summarize_aggregate_methods
     from utils.benchmark import summarize_benchmark_results
+    from utils.benchmark_plotting import plot_aggregate_overview, plot_benchmark_summary
     from utils.config import load_config
     from utils.reporting import save_method_comparison_markdown
 
@@ -295,6 +296,15 @@ def run_pipeline(config_path, device_override=None, output_dir_override=None):
         benchmark_dir / "aggregate_overview.tsv",
         sep="\t",
         index=False,
+    )
+    plots_dir = benchmark_dir / "plots"
+    plot_benchmark_summary(
+        benchmark_dir / "benchmark_summary.tsv",
+        plots_dir / "benchmark_summary.png",
+    )
+    plot_aggregate_overview(
+        benchmark_dir / "aggregate_overview.tsv",
+        plots_dir / "aggregate_overview.png",
     )
 
     print(f"\nSaved method comparison outputs to: {benchmark_dir}")

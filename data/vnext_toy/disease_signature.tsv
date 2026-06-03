@@ -1,0 +1,7 @@
+gene	disease	log2fc	importance
+TYR	anti_browning	1.3	0.89
+MITF	anti_browning	1.5	0.94
+PPARGC1A	anti_browning	1.2	0.91
+UCP1	anti_browning	1.18	0.87
+DCT	anti_browning	0.92	0.72
+MLANA	anti_browning	0.88	0.69

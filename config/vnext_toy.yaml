@@ -1,0 +1,72 @@
+dataset:
+  nodes_path: data/vnext_toy/nodes.tsv
+  edges_path: data/vnext_toy/edges.tsv
+  perturbation_path: data/vnext_toy/perturbations.tsv
+  spatial_path: data/vnext_toy/spatial_context.tsv
+  drug_path: data/vnext_toy/drug_library.tsv
+  disease_gene_path: data/vnext_toy/disease_signature.tsv
+
+encoder:
+  relation_weights:
+    ppi: 1.0
+    regulates: 0.9
+    pathway_membership: 0.7
+    disease_association: 0.85
+    drug_target: 0.8
+    celltype_expression: 0.75
+    region_enrichment: 0.7
+  propagation_steps: 2
+  normalize_embeddings: true
+
+targeting:
+  target_genes:
+    - TYR
+    - MITF
+    - UCP1
+    - PPARGC1A
+  weight_similarity: 0.35
+  weight_disease_relevance: 0.25
+  weight_expression_specificity: 0.2
+  weight_network_support: 0.2
+
+perturbation:
+  target_state: reverse_disease
+  desired_direction: down
+  feature_weights:
+    disease_relevance: 0.35
+    perturbation_support: 0.3
+    pathway_support: 0.15
+    cell_specificity: 0.2
+  uncertainty_temperature: 0.65
+
+spatial:
+  disease_regions:
+    - epidermis_edge
+    - inflamed_melanocyte_niche
+  disease_cell_types:
+    - melanocyte
+    - adipocyte
+  region_weight: 0.6
+  cell_type_weight: 0.4
+
+repurposing:
+  disease_name: anti_browning
+  path_bonus: 0.15
+  target_overlap_weight: 0.45
+  perturbation_alignment_weight: 0.3
+  disease_reversal_weight: 0.25
+
+causal:
+  stability_weight: 0.25
+  intervention_weight: 0.3
+  spatial_weight: 0.15
+  druggability_weight: 0.15
+  evidence_weight: 0.15
+  uncertainty_penalty: 0.25
+
+reporting:
+  top_k: 8
+
+runtime:
+  seed: 11
+  output_dir: results_vnext

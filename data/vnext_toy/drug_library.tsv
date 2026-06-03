@@ -1,0 +1,7 @@
+drug	target	desired_action	clinical_phase	safety_score	reversal_support
+Pigmentil	TYR	inhibit	2	0.71	0.74
+Pigmentil	MITF	modulate	2	0.69	0.77
+ThermoLift	UCP1	activate	2	0.74	0.82
+ThermoLift	PPARGC1A	activate	2	0.76	0.85
+DualShift	MITF	modulate	1	0.64	0.75
+DualShift	PPARGC1A	activate	1	0.68	0.87
