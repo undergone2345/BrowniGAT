@@ -1,0 +1,4 @@
+pathway_name	gene_symbol	membership_score	data_source
+melanogenesis	MITF	0.95	Reactome_like
+melanogenesis	TYR	0.93	Reactome_like
+thermogenesis	UCP1	0.98	KEGG_like

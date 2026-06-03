@@ -1,0 +1,4 @@
+drug_name	gene_symbol	action_type	confidence_score	data_source
+DualShift	MITF	modulate	0.79	DrugBank_like
+DualShift	PPARGC1A	activate	0.88	DrugBank_like
+ThermoLift	UCP1	activate	0.80	BindingDB_like

@@ -1,0 +1,46 @@
+real_data:
+  output_dir: results_real_ingestion
+  entity_normalization:
+    uppercase_genes: true
+    trim_whitespace: true
+  sources:
+    drug_target:
+      path: data/real_templates/drug_target_example.tsv
+      sep: "\t"
+      schema: drug_target
+      columns:
+        drug: drug_name
+        target: gene_symbol
+        action: action_type
+        score: confidence_score
+        source: data_source
+    disease_gene:
+      path: data/real_templates/disease_gene_example.tsv
+      sep: "\t"
+      schema: disease_gene
+      columns:
+        disease: disease_name
+        gene: gene_symbol
+        score: association_score
+        direction: dysregulation_direction
+        source: data_source
+    pathway:
+      path: data/real_templates/pathway_membership_example.tsv
+      sep: "\t"
+      schema: pathway_membership
+      columns:
+        pathway: pathway_name
+        gene: gene_symbol
+        score: membership_score
+        source: data_source
+    spatial:
+      path: data/real_templates/spatial_context_example.tsv
+      sep: "\t"
+      schema: spatial_context
+      columns:
+        region: region_name
+        cell_type: cell_type_name
+        gene: gene_symbol
+        region_score: region_enrichment_score
+        cell_type_score: celltype_specificity_score
+        source: data_source

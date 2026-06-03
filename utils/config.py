@@ -4,6 +4,14 @@ import yaml
 
 
 DEFAULT_CONFIG = {
+    "real_data": {
+        "output_dir": "results_real_ingestion",
+        "entity_normalization": {
+            "uppercase_genes": True,
+            "trim_whitespace": True,
+        },
+        "sources": {},
+    },
     "data": {
         "path": "data/string_interactions_short.csv",
         "sep": "\t",

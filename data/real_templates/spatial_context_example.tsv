@@ -1,0 +1,4 @@
+region_name	cell_type_name	gene_symbol	region_enrichment_score	celltype_specificity_score	data_source
+inflamed_melanocyte_niche	melanocyte	MITF	0.96	0.99	ST_like
+epidermis_edge	melanocyte	TYR	0.84	0.97	ST_like
+thermogenic_fat_patch	adipocyte	UCP1	0.98	0.96	ST_like

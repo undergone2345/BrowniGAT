@@ -1,0 +1,4 @@
+disease_name	gene_symbol	association_score	dysregulation_direction	data_source
+anti_browning	MITF	0.94	up	DisGeNET_like
+anti_browning	TYR	0.89	up	DisGeNET_like
+anti_browning	PPARGC1A	0.91	up	OpenTargets_like

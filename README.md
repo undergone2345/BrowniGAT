@@ -56,8 +56,10 @@ The repository now also includes a `vNext` multi-capability stack that moves bey
 BrowniGAT/
 |-- config/
 |   |-- config.yaml
+|   |-- real_data_example.yaml
 |   `-- toy_config.yaml
 |-- data/
+|   |-- real_templates/
 |   |-- string_interactions_short.csv
 |   |-- toy_string_interactions.tsv
 |   `-- vnext_toy/
@@ -92,6 +94,7 @@ BrowniGAT/
 |-- notebooks/
 |   `-- demo_analysis.ipynb
 |-- benchmark_plot.py
+|-- ingest_multimodal_data.py
 |-- main.py
 |-- tasks/
 |-- vnext_main.py
@@ -169,6 +172,12 @@ Run the vNext multi-capability toy pipeline:
 python vnext_main.py --config config/vnext_toy.yaml
 ```
 
+Build a canonical real-data bundle from standardized modality tables:
+
+```bash
+python ingest_multimodal_data.py --config config/real_data_example.yaml
+```
+
 ## Configuration Overview
 
 Main configurable sections:
@@ -223,6 +232,14 @@ The `vNext` pipeline writes a separate result bundle under `results_vnext/`:
 - `REPORT.md`
 - `plots/*.png`
 
+The real-data ingestion pipeline writes a canonical bundle under `results_real_ingestion/`:
+
+- `canonical_nodes.tsv`
+- `canonical_edges.tsv`
+- `modalities/*.tsv`
+- `foundation_manifest.json`
+- `ingestion_summary.json`
+
 ## vNext Capability Map
 
 The new `vNext` stack fills the five big capability gaps that a PPI-only system cannot cover:
@@ -241,6 +258,27 @@ The new `vNext` stack fills the five big capability gaps that a PPI-only system 
 
 5. Causal ranking
    Final target ranking integrates stability, intervention evidence, context specificity, druggability, and uncertainty.
+
+## Real Data Ingestion Layer
+
+To move toward a real large-scale foundation-model system, the repository now includes a standardized ingestion layer for multimodal biological data.
+
+Supported modality templates:
+
+- `drug-target`
+- `disease-gene`
+- `pathway-membership`
+- `spatial-context`
+
+This ingestion layer adds:
+
+- column mapping from source-specific headers into canonical headers
+- schema validation for required fields and score ranges
+- entity normalization such as whitespace trimming and uppercase gene symbols
+- harmonized node and edge export for downstream heterogenous graph construction
+- a foundation-ready manifest describing the canonical bundle
+
+The main example config is `config/real_data_example.yaml`, and template tables live in `data/real_templates/`.
 
 ## Baseline Comparison
 
@@ -309,6 +347,7 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - benchmark plotting output generation
 - toy config loading
 - vNext heterogenous graph task flow
+- real-data ingestion and schema validation
 
 ## Suggested Next Extensions
 
