@@ -8,6 +8,8 @@ It also now includes a third-layer foundation workspace builder that converts ca
 
 The repository now also includes a fourth-layer pretraining trainer skeleton with multimodal batch construction, task heads, checkpoint schema, and epoch-level training orchestration.
 
+It now also includes a fifth-layer training stack upgrade with configurable backbones, experiment manifests, optimizer and scheduler stubs, gradient accumulation, and richer resume-ready checkpoint metadata.
+
 ## What This Repository Does
 
 - Loads STRING-like PPI interaction tables and builds a graph.
@@ -67,6 +69,13 @@ The repository now also includes a fourth-layer pretraining trainer skeleton wit
 - Added task heads for masked node modeling, masked edge modeling, alignment, perturbation conditioning, and spatial context prediction.
 - Added checkpoint schema and per-epoch checkpoint writing.
 - Added a trainer skeleton that writes training history and summary metrics.
+
+### Version 8: Foundation Training Stack Upgrade
+
+- Added configurable backbone interfaces for future multimodal encoders.
+- Added experiment manifests for reproducible training runs.
+- Added optimizer and scheduler stubs to mirror real pretraining systems.
+- Added gradient accumulation and richer checkpoint metadata for resume-ready workflows.
 
 ## Repository Layout
 
@@ -291,6 +300,7 @@ The foundation trainer skeleton extends that workspace with:
 - `training_history.csv`
 - `training_summary.json`
 - `checkpoints/epoch_*.json`
+- `experiment_manifest.json`
 
 ## vNext Capability Map
 
@@ -370,9 +380,21 @@ This layer adds:
 Core files:
 
 - `utils/foundation_dataset.py`
+- `model/foundation_backbone.py`
 - `model/foundation_task_heads.py`
 - `utils/checkpoint_schema.py`
+- `utils/experiment_registry.py`
 - `utils/foundation_trainer.py`
+- `utils/training_components.py`
+
+The current stack is still a trainer skeleton rather than a full large-scale neural training system, but it now mirrors the shape of one much more closely:
+
+- backbone configuration
+- task-head dispatch
+- dataset and collation layer
+- optimizer and scheduler state stubs
+- checkpoint payloads with resume metadata
+- experiment-level manifests
 
 ## Baseline Comparison
 
@@ -444,6 +466,7 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - real-data ingestion and schema validation
 - foundation workspace manifest and sampling-plan generation
 - foundation trainer history and checkpoint generation
+- advanced foundation training stack orchestration
 
 ## Suggested Next Extensions
 

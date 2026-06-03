@@ -71,6 +71,25 @@ class MultimodalPretrainingDataset:
     def get_task_samples(self, task_name):
         return self.samples_by_task.get(task_name, [])
 
+    def as_torch_dataset(self, task_name):
+        samples = self.get_task_samples(task_name)
+        try:
+            from torch.utils.data import Dataset
+        except ModuleNotFoundError:
+            return samples
+
+        class _TaskDataset(Dataset):
+            def __init__(self, task_samples):
+                self.task_samples = task_samples
+
+            def __len__(self):
+                return len(self.task_samples)
+
+            def __getitem__(self, idx):
+                return self.task_samples[idx]
+
+        return _TaskDataset(samples)
+
 
 def create_batches(samples, batch_size):
     if batch_size <= 0:
@@ -98,3 +117,13 @@ def build_epoch_batches(dataset, sampling_plan):
                 }
             )
     return epoch_batches
+
+
+def collate_foundation_batch(batch):
+    if not batch:
+        return {"raw_batch": [], "batch_size": 0}
+    all_keys = sorted({key for item in batch for key in item.keys()})
+    collated = {key: [item.get(key) for item in batch] for key in all_keys}
+    collated["raw_batch"] = batch
+    collated["batch_size"] = len(batch)
+    return collated

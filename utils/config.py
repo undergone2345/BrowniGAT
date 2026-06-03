@@ -7,6 +7,14 @@ DEFAULT_CONFIG = {
     "foundation": {
         "source_bundle_dir": "results_real_ingestion",
         "output_dir": "results_foundation_workspace",
+        "experiment": {
+            "name": "browning_foundation_pretraining_demo",
+        },
+        "backbone": {
+            "name": "hetero_graph_transformer",
+            "hidden_dim": 256,
+            "num_layers": 6,
+        },
         "tokenizer": {
             "gene_symbol_case": "upper",
             "split_characters": False,
@@ -24,6 +32,18 @@ DEFAULT_CONFIG = {
         "training": {
             "epochs": 3,
             "checkpoint_every": 1,
+            "gradient_accumulation_steps": 1,
+            "resume_from_checkpoint": None,
+        },
+        "optimizer": {
+            "name": "adamw",
+            "lr": 3e-4,
+            "weight_decay": 0.01,
+        },
+        "scheduler": {
+            "name": "cosine_with_warmup",
+            "warmup_steps": 20,
+            "min_lr_ratio": 0.1,
         },
     },
     "real_data": {

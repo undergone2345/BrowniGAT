@@ -3,7 +3,17 @@ from pathlib import Path
 import json
 
 
-def build_checkpoint_payload(epoch, global_step, metrics, config_snapshot, manifest_path, sampling_plan):
+def build_checkpoint_payload(
+    epoch,
+    global_step,
+    metrics,
+    config_snapshot,
+    manifest_path,
+    sampling_plan,
+    optimizer_state=None,
+    scheduler_state=None,
+    resume_metadata=None,
+):
     return {
         "checkpoint_version": 1,
         "saved_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -13,6 +23,9 @@ def build_checkpoint_payload(epoch, global_step, metrics, config_snapshot, manif
         "config_snapshot": config_snapshot,
         "manifest_path": str(manifest_path),
         "sampling_plan": sampling_plan,
+        "optimizer_state": optimizer_state or {},
+        "scheduler_state": scheduler_state or {},
+        "resume_metadata": resume_metadata or {},
     }
 
 
