@@ -1,8 +1,28 @@
 # BrowniGAT
 
-BrowniGAT is a graph representation learning framework for discovering anti-browning core targets from protein-protein interaction networks. The project now supports configuration-driven training, graph topology baselines, repeated experiments, aggregated ranking, network auditing, richer result exports, and direct method comparison across multiple GNN backbones.
+BrowniGAT is an open biomedical AI infrastructure repository that has grown beyond a single PPI target-ranking pipeline.
 
-The repository now also includes a `vNext` multi-capability stack that moves beyond PPI-only ranking into heterogenous graph reasoning, perturbation forecasting, spatial context prioritization, drug repurposing, and causal target ranking.
+Today the project spans four connected layers:
+
+- a multimodal biomedical graph platform for ingesting disease-gene, drug-target, pathway, and spatial evidence
+- a foundation training engine for workspace building, multimodal task orchestration, checkpointing, and validation
+- a scheduler, recovery, and promotion control plane for more engine-like experiment execution
+- a synthetic biology design layer that converts ranked targets into intervention programs and construct blueprints
+
+The original anti-browning target-discovery workflow is still present, but it is now only one entry point into a broader systems stack for biomedical graph learning, intervention reasoning, and design-oriented outputs.
+
+## Why BrowniGAT Matters
+
+Many biomedical graph repositories stop at ranking targets.
+
+BrowniGAT is trying to cover a wider loop:
+
+1. normalize real multimodal biological inputs
+2. build graph-native and foundation-model-ready training workspaces
+3. orchestrate runs with scheduler and recovery semantics
+4. generate intervention and synthetic biology design outputs
+
+That broader framing is the repository's real open-source value proposition.
 
 It also now includes a third-layer foundation workspace builder that converts canonical multimodal bundles into manifest-driven pretraining workspaces with modality registries, feature specs, task registries, and sampling plans.
 
@@ -122,10 +142,18 @@ The repository now also starts to distinguish two different infrastructure layer
 - Added failure recovery policies that decide whether a failed stage should retry and which checkpoint to resume from.
 - Added an experiment scheduler entrypoint that writes scheduler manifests, queue files, event logs, and stage summaries.
 
+### Version 15: Resource-Aware Engine And SynBio Design Layer
+
+- Added resource-aware scheduling metadata including CPU slot, GPU slot, concurrency, and stage priority hints.
+- Added metric-based promotion policy gates that can halt downstream stages when validation objectives are not met.
+- Added a synthetic biology design layer that converts ranked targets into gene programs, pathway rewiring plans, and construct blueprints.
+- Added a dedicated `synbio_main.py` entrypoint and tests for synthetic biology design outputs.
+
 ## Repository Layout
 
 ```text
 BrowniGAT/
+|-- .github/
 |-- config/
 |   |-- config.yaml
 |   |-- foundation_example.yaml
@@ -136,6 +164,7 @@ BrowniGAT/
 |   |-- string_interactions_short.csv
 |   |-- toy_string_interactions.tsv
 |   `-- vnext_toy/
+|-- docs/
 |-- model/
 |   |-- gat_embed.py
 |   |-- gcn_embed.py
@@ -167,11 +196,18 @@ BrowniGAT/
 |-- notebooks/
 |   `-- demo_analysis.ipynb
 |-- benchmark_plot.py
+|-- CHANGELOG.md
+|-- CONTRIBUTING.md
+|-- CITATION.cff
 |-- foundation_main.py
+|-- foundation_schedule.py
 |-- foundation_train.py
 |-- config/foundation_engine_example.yaml
 |-- ingest_multimodal_data.py
+|-- LICENSE
 |-- main.py
+|-- ROADMAP.md
+|-- synbio_main.py
 |-- tasks/
 |-- vnext_main.py
 |-- README.md
@@ -191,6 +227,14 @@ Recommended environment:
 - Python 3.9+
 - PyTorch 2.x
 - PyTorch Geometric 2.x
+
+Project metadata and maintenance files:
+
+- contribution guide: `CONTRIBUTING.md`
+- roadmap: `ROADMAP.md`
+- release history: `CHANGELOG.md`
+- citation metadata: `CITATION.cff`
+- usage and workflow docs: `docs/`
 
 ## Input Data Format
 
@@ -278,11 +322,16 @@ Run the experiment scheduler that materializes a stage plan, run queue, and reco
 python foundation_schedule.py --config config/foundation_engine_example.yaml --workspace-dir results/foundation_scheduler
 ```
 
-Run a repeatable engineering loop until local midnight or another deadline:
+Run the synthetic biology design layer on top of the multimodal toy dataset:
 
 ```bash
-python scripts/ai_loop.py --config config/ai_loop_example.yaml --deadline tonight_24
+python synbio_main.py --config config/synbio_toy.yaml --output-dir results_synbio/demo
 ```
+
+Supporting documents:
+
+- application framing: `docs/APPLICATIONS.md`
+- demo command map: `docs/DEMO_WORKFLOWS.md`
 
 ## Configuration Overview
 
@@ -337,6 +386,14 @@ The `vNext` pipeline writes a separate result bundle under `results_vnext/`:
 - `vnext_summary.json`
 - `REPORT.md`
 - `plots/*.png`
+
+The synthetic biology design layer writes a separate result bundle under `results_synbio/`:
+
+- `gene_program_design.tsv`
+- `pathway_rewiring.tsv`
+- `construct_blueprints.tsv`
+- `synbio_summary.json`
+- `SYNBIO_REPORT.md`
 
 The real-data ingestion pipeline writes a canonical bundle under `results_real_ingestion/`:
 
@@ -511,9 +568,10 @@ It now also includes:
 - data sharding summaries for rank-local task views
 - worker-aware sampler sequencing
 - stage-wise checkpoint retention policies
-- repeatable AI loop automation with deadline-based execution
 - manifest-aware stage planning and queue orchestration
 - failure recovery policies and scheduler event logs
+- resource-aware slot requests and priority queue metadata
+- metric-based promotion gating between stages
 
 ## Baseline Comparison
 
@@ -591,28 +649,9 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - artifact index and early-stopping lifecycle testing
 - curriculum scheduling, event log, and checkpoint catalog testing
 - sharding, manifest partitioning, worker-aware sampling, and retention testing
-- deadline parsing and AI loop lifecycle testing
 - scheduler planning, retry, and queue execution testing
-
-## AI Loop
-
-The repository now includes a lightweight `ai loop` runner for sustained engineering iterations.
-
-This runner is designed for long evening sessions where you want the repo to keep cycling through validation and smoke workflows until a deadline.
-
-Current capabilities:
-
-- deadline-based execution such as `tonight_24`, `23:30`, or full ISO timestamps
-- configurable multi-step command pipelines in `config/ai_loop_example.yaml`
-- per-step stdout and stderr capture into `results/ai_loop/loop_runs.jsonl`
-- final loop summary export into `results/ai_loop/loop_summary.json`
-- per-step failure policy and maximum iteration control
-
-Typical usage:
-
-```bash
-python scripts/ai_loop.py --config config/ai_loop_example.yaml --deadline tonight_24
-```
+- resource-aware scheduling and promotion-gate testing
+- synthetic biology design pipeline testing
 
 ## Scheduler Layer
 
@@ -624,7 +663,22 @@ This layer is intended to look more like a real training engine orchestrator:
 - queue materialization for stage-by-stage execution
 - per-stage workspaces and checkpoint handoff between queued runs
 - retry-oriented failure recovery using latest or best checkpoints
+- resource-aware slot requests, priority queue ordering, and simple concurrency metadata
+- metric-based promotion gates for halting or rolling back downstream stages
 - scheduler artifacts such as `scheduler_plan.json`, `run_queue.json`, `scheduler_summary.json`, and `scheduler_events.jsonl`
+
+## Synthetic Biology Layer
+
+The repository no longer stops at target ranking alone.
+
+It now also supports a lightweight synthetic biology design workflow that sits on top of the multimodal prioritization stack:
+
+- convert top causal and perturbation-supported targets into CRISPRa or CRISPRi gene programs
+- bundle targets into multiplex intervention modules
+- summarize pathway rewiring opportunities from pathway-membership edges
+- generate construct blueprints with promoter, delivery, and assembly suggestions
+
+This makes the project easier to describe as an intervention-design platform rather than only a target-screening repository.
 
 ## Suggested Next Extensions
 
@@ -635,7 +689,7 @@ This layer is intended to look more like a real training engine orchestrator:
 
 ## Citation
 
-If this repository helps your work, cite it as:
+If this repository helps your work, use the citation metadata in `CITATION.cff` or cite it as:
 
 ```text
 BrowniGAT: Graph Attention based discovery of anti-browning targets from PPI networks.

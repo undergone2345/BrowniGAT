@@ -59,9 +59,22 @@ DEFAULT_CONFIG = {
             "enabled": False,
             "execute_queue": True,
             "default_stage_epochs": 1,
+            "enforce_stage_order": True,
+            "resources": {
+                "cpu_slots": 4,
+                "gpu_slots": 1,
+                "max_concurrent_runs": 1,
+            },
             "failure_recovery": {
                 "max_retries": 1,
                 "resume_strategy": "latest",
+            },
+            "promotion_policy": {
+                "enabled": False,
+                "metric_name": "best_validation_loss",
+                "mode": "min",
+                "threshold": 0.2,
+                "on_fail": "halt",
             },
         },
         "validation": {

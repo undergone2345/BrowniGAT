@@ -7,6 +7,8 @@ from utils.config import load_config
 from utils.experiment_scheduler import schedule_foundation_experiments
 from utils.foundation_ready import export_foundation_bundle
 from utils.real_data_importers import ingest_multimodal_sources
+from utils.run_queue import build_run_queue
+from utils.stage_planner import build_manifest_aware_stage_plan
 
 
 class ExperimentSchedulerTests(unittest.TestCase):
@@ -93,6 +95,109 @@ class ExperimentSchedulerTests(unittest.TestCase):
             with summary_path.open("r", encoding="utf-8") as handle:
                 summary = json.load(handle)
             self.assertEqual(summary["scheduled_runs"], 2)
+
+    def test_resource_aware_priority_queue_and_promotion_gate(self):
+        real_cfg = load_config("config/real_data_example.yaml")
+        foundation_cfg = load_config("config/foundation_engine_example.yaml")["foundation"]
+        foundation_cfg = dict(foundation_cfg)
+        foundation_cfg["experiment_scheduler"] = dict(foundation_cfg["experiment_scheduler"])
+        foundation_cfg["experiment_scheduler"]["execute_queue"] = True
+        foundation_cfg["experiment_scheduler"]["enforce_stage_order"] = False
+        foundation_cfg["experiment_scheduler"]["promotion_policy"] = {
+            "enabled": True,
+            "metric_name": "best_validation_loss",
+            "mode": "min",
+            "threshold": 0.2,
+            "on_fail": "halt",
+        }
+        foundation_cfg["curriculum"] = {
+            "phases": [
+                {
+                    "name": "high_priority_multimodal",
+                    "epochs": 1,
+                    "priority": 100,
+                    "tasks": [
+                        "masked_node_modeling",
+                        "cross_modal_alignment",
+                        "perturbation_conditioning",
+                    ],
+                },
+                {
+                    "name": "lower_priority_structural",
+                    "epochs": 1,
+                    "priority": 20,
+                    "tasks": [
+                        "masked_node_modeling",
+                        "masked_edge_modeling",
+                    ],
+                },
+                {
+                    "name": "should_be_skipped_after_gate",
+                    "epochs": 1,
+                    "priority": 10,
+                    "tasks": [
+                        "masked_node_modeling",
+                        "masked_edge_modeling",
+                    ],
+                },
+            ]
+        }
+        bundle = ingest_multimodal_sources(real_cfg["real_data"])
+        runner_calls = []
+
+        def fake_runner(stage_cfg, stage_workspace):
+            runner_calls.append(stage_cfg["experiment"]["name"])
+            stage_workspace = Path(stage_workspace)
+            stage_workspace.mkdir(parents=True, exist_ok=True)
+            checkpoint_path = stage_workspace / "checkpoints" / "epoch_001.json"
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+            checkpoint_path.write_text("{}", encoding="utf-8")
+            metric_value = 0.5 if "high_priority_multimodal" in stage_cfg["experiment"]["name"] else 0.05
+            return {
+                "summary": {
+                    "latest_checkpoint": str(checkpoint_path),
+                    "best_validation_loss": metric_value,
+                }
+            }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            bundle_dir = tmpdir_path / "bundle"
+            workspace_dir = tmpdir_path / "scheduler_workspace"
+            export_foundation_bundle(bundle, bundle_dir)
+            foundation_cfg["source_bundle_dir"] = str(bundle_dir)
+
+            result = schedule_foundation_experiments(foundation_cfg, workspace_dir, runner=fake_runner)
+
+            self.assertEqual(result["summary"]["scheduled_runs"], 1)
+            self.assertGreaterEqual(result["summary"]["skipped_runs"], 1)
+            self.assertIn("high_priority_multimodal", runner_calls[0])
+            self.assertEqual(result["run_queue"][0]["priority"], 100)
+            self.assertFalse(result["run_queue"][0]["promotion_decision"]["passed"])
+
+    def test_stage_plan_and_run_queue_expose_resource_requests(self):
+        real_cfg = load_config("config/real_data_example.yaml")
+        foundation_cfg = load_config("config/foundation_engine_example.yaml")["foundation"]
+        bundle = ingest_multimodal_sources(real_cfg["real_data"])
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            bundle_dir = tmpdir_path / "bundle"
+            workspace_dir = tmpdir_path / "workspace"
+            export_foundation_bundle(bundle, bundle_dir)
+            foundation_cfg = dict(foundation_cfg)
+            foundation_cfg["source_bundle_dir"] = str(bundle_dir)
+
+            from utils.foundation_workspace import build_foundation_workspace
+
+            workspace = build_foundation_workspace(foundation_cfg, workspace_dir)
+            stage_plan = build_manifest_aware_stage_plan(workspace["manifest"], foundation_cfg)
+            run_queue = build_run_queue(stage_plan, workspace_dir, foundation_cfg["experiment_scheduler"])
+
+            self.assertIn("resource_request", stage_plan[0])
+            self.assertIn("priority", stage_plan[0])
+            self.assertIn("resource_request", run_queue[0])
+            self.assertIn("priority", run_queue[0])
 
 
 if __name__ == "__main__":

@@ -44,8 +44,22 @@ VNEXT_DEFAULT_CONFIG = {
         "evidence_weight": 0.15,
         "uncertainty_penalty": 0.25,
     },
+    "synbio": {
+        "top_k_targets": 6,
+        "max_targets_per_construct": 3,
+        "editor_by_action": {
+            "activate": "CRISPRa",
+            "repress": "CRISPRi",
+        },
+        "promoter_by_cell_type": {},
+        "default_promoter": "EF1A",
+        "delivery_system": "lentiviral_pool",
+        "assembly_strategy": "GoldenGate",
+        "construct_prefix": "BrowniBuild",
+        "uncertainty_penalty": 0.1,
+    },
     "reporting": {"top_k": 8},
-    "runtime": {"seed": 11, "output_dir": "results_vnext"},
+    "runtime": {"seed": 11, "output_dir": "results_vnext", "output_dir_synbio": "results_synbio"},
 }
 
 

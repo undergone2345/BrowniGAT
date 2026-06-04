@@ -1,0 +1,30 @@
+name: Feature request
+description: Propose a new capability, engine improvement, or biomedical workflow
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What user problem or workflow gap does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the feature or design direction you want to see.
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Relevant layer
+      options:
+        - Multimodal graph platform
+        - Foundation training engine
+        - Scheduler control plane
+        - Synthetic biology design layer
+        - Documentation and tooling

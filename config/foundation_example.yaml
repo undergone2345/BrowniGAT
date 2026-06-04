@@ -83,9 +83,20 @@ foundation:
     enabled: false
     execute_queue: true
     default_stage_epochs: 1
+    enforce_stage_order: true
+    resources:
+      cpu_slots: 4
+      gpu_slots: 1
+      max_concurrent_runs: 1
     failure_recovery:
       max_retries: 1
       resume_strategy: latest
+    promotion_policy:
+      enabled: false
+      metric_name: best_validation_loss
+      mode: min
+      threshold: 0.2
+      on_fail: halt
   training:
     epochs: 3
     checkpoint_every: 1
