@@ -18,6 +18,8 @@ def build_checkpoint_payload(
     validation_metrics=None,
     is_best=False,
     early_stopping_state=None,
+    curriculum_state=None,
+    data_shard_state=None,
 ):
     return {
         "checkpoint_version": 1,
@@ -36,6 +38,8 @@ def build_checkpoint_payload(
         "validation_metrics": validation_metrics or {},
         "is_best": bool(is_best),
         "early_stopping_state": early_stopping_state or {},
+        "curriculum_state": curriculum_state or {},
+        "data_shard_state": data_shard_state or {},
     }
 
 

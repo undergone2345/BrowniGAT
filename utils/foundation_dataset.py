@@ -3,15 +3,18 @@ from pathlib import Path
 
 import pandas as pd
 
+from utils.data_sharding import shard_task_samples
 from utils.pretraining_manifest import load_canonical_bundle
 
 
 class MultimodalPretrainingDataset:
-    def __init__(self, workspace_dir):
+    def __init__(self, workspace_dir, runtime_topology=None):
         self.workspace_dir = Path(workspace_dir)
+        self.runtime_topology = runtime_topology or {"world_size": 1, "global_rank": 0}
         self.manifest = self._load_manifest()
         self.bundle = load_canonical_bundle(self.manifest["bundle_dir"])
-        self.samples_by_task = self._build_samples()
+        full_samples = self._build_samples()
+        self.samples_by_task, self.shard_summary = shard_task_samples(full_samples, self.runtime_topology)
         self.splits_by_task = self._build_splits()
 
     def _load_manifest(self):
@@ -71,6 +74,9 @@ class MultimodalPretrainingDataset:
 
     def get_task_samples(self, task_name):
         return self.samples_by_task.get(task_name, [])
+
+    def get_shard_summary(self):
+        return self.shard_summary
 
     def get_task_split(self, task_name, split_name="train"):
         return self.splits_by_task.get(task_name, {}).get(split_name, [])

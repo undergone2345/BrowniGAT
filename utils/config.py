@@ -38,6 +38,23 @@ DEFAULT_CONFIG = {
             "shuffle": False,
             "prefetch_factor": None,
         },
+        "distributed": {
+            "world_size": 1,
+            "global_rank": 0,
+            "local_rank": 0,
+            "backend": "single_process",
+            "gradient_sync": False,
+        },
+        "data_partitioning": {
+            "max_partition_size": 1000,
+        },
+        "curriculum": {
+            "phases": [],
+        },
+        "checkpoint_retention": {
+            "keep_last_per_phase": 1,
+            "keep_best": True,
+        },
         "validation": {
             "max_batches_per_task": 2,
         },

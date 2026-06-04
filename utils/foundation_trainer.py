@@ -4,6 +4,12 @@ import pandas as pd
 
 from model.foundation_backbone import build_foundation_backbone
 from utils.artifact_index import build_artifact_index, save_artifact_index
+from utils.checkpoint_catalog import load_checkpoint_catalog
+from utils.checkpoint_catalog import update_checkpoint_catalog
+from utils.checkpoint_retention import apply_stage_checkpoint_retention
+from utils.curriculum_schedule import build_curriculum_state
+from utils.data_sharding import build_data_shard
+from utils.event_log import append_event, count_events
 from model.foundation_task_heads import build_task_head
 from utils.checkpoint_schema import (
     build_checkpoint_payload,
@@ -25,6 +31,7 @@ from utils.foundation_dataset import (
 )
 from utils.loss_composer import compose_multitask_loss, summarize_loss_components
 from utils.reporting import save_run_metadata
+from utils.runtime_topology import build_runtime_topology
 from utils.run_registry import append_run_record, build_run_record
 from utils.sampler_plan import build_task_sampling_sequence
 from utils.validation_registry import build_validation_batches, summarize_validation_outputs
@@ -40,8 +47,9 @@ from utils.training_components import (
 
 def run_foundation_training(foundation_cfg, workspace_dir):
     workspace_dir = Path(workspace_dir)
+    runtime_topology = build_runtime_topology(foundation_cfg.get("distributed", {}))
     workspace = build_foundation_workspace(foundation_cfg, workspace_dir)
-    dataset = MultimodalPretrainingDataset(workspace_dir)
+    dataset = MultimodalPretrainingDataset(workspace_dir, runtime_topology=runtime_topology)
     backbone = build_foundation_backbone(foundation_cfg["backbone"])
     task_heads = {
         task_spec["name"]: build_task_head(task_spec)
@@ -71,6 +79,7 @@ def run_foundation_training(foundation_cfg, workspace_dir):
     last_completed_epoch = max(0, start_epoch - 1)
     latest_checkpoint_path = None
     best_checkpoint_path = None
+    event_log_path = workspace_dir / "events" / "training_events.jsonl"
 
     history_path = workspace_dir / "training_history.csv"
 
@@ -103,11 +112,31 @@ def run_foundation_training(foundation_cfg, workspace_dir):
     )
 
     for epoch in range(start_epoch, int(training_cfg["epochs"]) + 1):
-        task_sequence = build_task_sampling_sequence(
-            workspace["sampling_plan"],
-            repeat_strategy=foundation_cfg.get("sampling", {}).get("repeat_strategy", "round_robin"),
+        curriculum_state = build_curriculum_state(
+            [task_spec["name"] for task_spec in workspace["manifest"]["enabled_tasks"]],
+            foundation_cfg.get("curriculum", {}),
+            epoch,
         )
-        epoch_batches = build_epoch_batches(dataset, workspace["sampling_plan"], task_sequence=task_sequence)
+        append_event(
+            event_log_path,
+            "epoch_start",
+            {
+                "epoch": epoch,
+                "phase_name": curriculum_state["phase_name"],
+                "active_tasks": curriculum_state["active_tasks"],
+            },
+        )
+        active_sampling_plan = [
+            item for item in workspace["sampling_plan"]
+            if item["task_name"] in set(curriculum_state["active_tasks"])
+        ]
+        task_sequence = build_task_sampling_sequence(
+            active_sampling_plan,
+            repeat_strategy=foundation_cfg.get("sampling", {}).get("repeat_strategy", "round_robin"),
+            worker_index=0,
+            num_workers=1,
+        )
+        epoch_batches = build_epoch_batches(dataset, active_sampling_plan, task_sequence=task_sequence)
         epoch_batches = maybe_shuffle_epoch_batches(
             epoch_batches,
             shuffle_enabled=foundation_cfg["sampling"].get("shuffle_tasks_each_epoch", False),
@@ -172,7 +201,10 @@ def run_foundation_training(foundation_cfg, workspace_dir):
         summary_metrics["loss_components"] = summarize_loss_components(loss_component_rows)
         validation_batches = build_validation_batches(
             dataset,
-            workspace["manifest"]["enabled_tasks"],
+            [
+                task_spec for task_spec in workspace["manifest"]["enabled_tasks"]
+                if task_spec["name"] in set(curriculum_state["active_tasks"])
+            ],
             max_batches_per_task=int(foundation_cfg.get("validation", {}).get("max_batches_per_task", 2)),
         )
         validation_rows = []
@@ -207,10 +239,17 @@ def run_foundation_training(foundation_cfg, workspace_dir):
             engine_state={
                 "mode": foundation_cfg["experiment"].get("mode", "research"),
                 "backbone_name": foundation_cfg["backbone"]["name"],
+                "runtime_topology": runtime_topology,
             },
             validation_metrics=validation_metrics,
             is_best=is_best,
             early_stopping_state=early_stopping_state,
+            curriculum_state=curriculum_state,
+            data_shard_state={
+                "world_size": runtime_topology.get("world_size", 1),
+                "global_rank": runtime_topology.get("global_rank", 0),
+                "task_shards": dataset.get_shard_summary(),
+            },
         )
         if epoch % int(training_cfg["checkpoint_every"]) == 0:
             checkpoint_path = workspace_dir / "checkpoints" / f"epoch_{epoch:03d}.json"
@@ -219,8 +258,50 @@ def run_foundation_training(foundation_cfg, workspace_dir):
             if is_best:
                 best_checkpoint_path = workspace_dir / "checkpoints" / "best.json"
                 save_checkpoint(checkpoint_payload, best_checkpoint_path)
+            checkpoint_catalog = update_checkpoint_catalog(
+                workspace_dir,
+                {
+                    "epoch": epoch,
+                    "checkpoint_path": f"checkpoints/epoch_{epoch:03d}.json",
+                    "is_best": bool(is_best),
+                    "phase_name": curriculum_state["phase_name"],
+                },
+            )
+            retention_summary = apply_stage_checkpoint_retention(
+                workspace_dir,
+                foundation_cfg.get("checkpoint_retention", {}),
+                checkpoint_catalog,
+            )
+            append_event(
+                event_log_path,
+                "checkpoint_saved",
+                {
+                    "epoch": epoch,
+                    "checkpoint_path": f"checkpoints/epoch_{epoch:03d}.json",
+                    "is_best": bool(is_best),
+                    "retention_summary": retention_summary,
+                },
+            )
         last_completed_epoch = epoch
+        append_event(
+            event_log_path,
+            "epoch_end",
+            {
+                "epoch": epoch,
+                "overall_validation_loss": validation_metrics["overall_validation_loss"],
+                "phase_name": curriculum_state["phase_name"],
+            },
+        )
         if early_stopping_state.get("should_stop", False):
+            append_event(
+                event_log_path,
+                "early_stop_triggered",
+                {
+                    "epoch": epoch,
+                    "best_epoch": early_stopping_state.get("best_epoch"),
+                    "best_score": early_stopping_state.get("best_score"),
+                },
+            )
             break
 
     history_df = pd.DataFrame(history)
@@ -256,6 +337,17 @@ def run_foundation_training(foundation_cfg, workspace_dir):
             total_batches=sum(item["steps"] for item in workspace["sampling_plan"]),
         ),
         "sampling_strategy": foundation_cfg.get("sampling", {}).get("repeat_strategy", "round_robin"),
+        "runtime_topology": runtime_topology,
+        "data_sharding": {
+            "world_size": runtime_topology.get("world_size", 1),
+            "global_rank": runtime_topology.get("global_rank", 0),
+            "task_shards": dataset.get_shard_summary(),
+        },
+        "manifest_partition_summary": workspace["manifest"].get("partition_summary", {}),
+        "curriculum_phases": foundation_cfg.get("curriculum", {}).get("phases", []),
+        "checkpoint_catalog": "checkpoints/checkpoint_index.json",
+        "event_log": "events/training_events.jsonl" if event_log_path.exists() else None,
+        "event_count": count_events(event_log_path),
     }
     save_run_metadata(summary, workspace_dir / "training_summary.json")
     run_record = build_run_record(

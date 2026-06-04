@@ -101,6 +101,20 @@ The repository now also starts to distinguish two different infrastructure layer
 - Added artifact index generation so downstream tooling can discover summaries, manifests, and checkpoint outputs reliably.
 - Added richer training summaries with actual completed epochs, dataloader settings, and final checkpoint resolution.
 
+### Version 12: Scalable Engine Skeleton
+
+- Added runtime topology metadata so single-process and future distributed launches share one schema.
+- Added curriculum-phase scheduling to separate graph warmup from later multimodal training phases.
+- Added event-log emission for epoch lifecycle, checkpoint saves, and early-stop triggers.
+- Added checkpoint catalog indexing so downstream orchestrators can enumerate engine artifacts without scanning the filesystem.
+
+### Version 13: Data Plane For Large-Scale Engine
+
+- Added manifest partition metadata so large canonical bundles can be described as shardable node, edge, and modality slices.
+- Added runtime data sharding for task samples, exposing per-task local versus global sample counts.
+- Added worker-aware sampling sequences so dataloader workers can consume disjoint task-step schedules.
+- Added stage-wise checkpoint retention so engine runs can keep the last checkpoint per curriculum phase plus best checkpoints.
+
 ## Repository Layout
 
 ```text
@@ -249,6 +263,12 @@ Run the more engine-oriented training stack:
 
 ```bash
 python foundation_train.py --config config/foundation_engine_example.yaml
+```
+
+Run a repeatable engineering loop until local midnight or another deadline:
+
+```bash
+python scripts/ai_loop.py --config config/ai_loop_example.yaml --deadline tonight_24
 ```
 
 ## Configuration Overview
@@ -471,6 +491,14 @@ It now also includes:
 - sampling-plan driven task sequencing
 - early-stopping policies with persisted state
 - artifact index generation for training outputs
+- curriculum-driven task activation
+- runtime topology metadata for future distributed expansion
+- event logs and checkpoint catalog files for engine auditing
+- manifest partitioning for bundle-scale planning
+- data sharding summaries for rank-local task views
+- worker-aware sampler sequencing
+- stage-wise checkpoint retention policies
+- repeatable AI loop automation with deadline-based execution
 
 ## Baseline Comparison
 
@@ -546,6 +574,29 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - explicit research-infra vs engine-layer testing
 - validation, best-checkpoint, and resume-flow testing
 - artifact index and early-stopping lifecycle testing
+- curriculum scheduling, event log, and checkpoint catalog testing
+- sharding, manifest partitioning, worker-aware sampling, and retention testing
+- deadline parsing and AI loop lifecycle testing
+
+## AI Loop
+
+The repository now includes a lightweight `ai loop` runner for sustained engineering iterations.
+
+This runner is designed for long evening sessions where you want the repo to keep cycling through validation and smoke workflows until a deadline.
+
+Current capabilities:
+
+- deadline-based execution such as `tonight_24`, `23:30`, or full ISO timestamps
+- configurable multi-step command pipelines in `config/ai_loop_example.yaml`
+- per-step stdout and stderr capture into `results/ai_loop/loop_runs.jsonl`
+- final loop summary export into `results/ai_loop/loop_summary.json`
+- per-step failure policy and maximum iteration control
+
+Typical usage:
+
+```bash
+python scripts/ai_loop.py --config config/ai_loop_example.yaml --deadline tonight_24
+```
 
 ## Suggested Next Extensions
 

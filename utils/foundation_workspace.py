@@ -17,6 +17,7 @@ def build_foundation_workspace(foundation_cfg, output_dir):
         enabled_modalities=enabled_modalities,
         enabled_tasks=enabled_tasks,
         tokenizer_cfg=foundation_cfg["tokenizer"],
+        max_partition_size=int(foundation_cfg.get("data_partitioning", {}).get("max_partition_size", 1000)),
     )
     sampling_plan = build_sampling_plan(
         enabled_tasks=enabled_tasks,
@@ -36,6 +37,7 @@ def build_foundation_workspace(foundation_cfg, output_dir):
         "steps_per_epoch": int(foundation_cfg["sampling"]["steps_per_epoch"]),
         "sampling_plan": sampling_plan,
         "vocab_sizes": manifest["vocab_sizes"],
+        "partition_summary": manifest["partition_summary"],
     }
     return {
         "manifest": manifest,

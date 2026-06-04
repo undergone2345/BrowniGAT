@@ -4,6 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from utils.feature_specs import export_feature_specs
+from utils.manifest_partition import build_manifest_partitions, summarize_manifest_partitions
 from utils.modality_registry import describe_modalities
 
 
@@ -18,9 +19,16 @@ def load_canonical_bundle(bundle_dir):
     return {"tables": tables, "nodes_df": nodes_df, "edges_df": edges_df}
 
 
-def build_pretraining_manifest(bundle_dir, enabled_modalities, enabled_tasks, tokenizer_cfg):
+def build_pretraining_manifest(
+    bundle_dir,
+    enabled_modalities,
+    enabled_tasks,
+    tokenizer_cfg,
+    max_partition_size=1000,
+):
     bundle = load_canonical_bundle(bundle_dir)
     available_modalities = sorted([name for name in enabled_modalities if name in bundle["tables"]])
+    partitions = build_manifest_partitions(bundle, max_partition_size=max_partition_size)
 
     vocabularies = _build_vocabularies(bundle["nodes_df"], tokenizer_cfg)
     manifest = {
@@ -34,6 +42,8 @@ def build_pretraining_manifest(bundle_dir, enabled_modalities, enabled_tasks, to
             "num_nodes": int(len(bundle["nodes_df"])),
             "num_edges": int(len(bundle["edges_df"])),
         },
+        "partitions": partitions,
+        "partition_summary": summarize_manifest_partitions(partitions),
         "enabled_tasks": enabled_tasks,
     }
     return manifest

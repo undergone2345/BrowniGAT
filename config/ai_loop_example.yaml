@@ -1,0 +1,13 @@
+repo_root: .
+output_dir: results/ai_loop
+deadline: tonight_24
+sleep_seconds: 10
+max_iterations: 3
+stop_on_failure: false
+steps:
+  - name: unit_tests
+    command: python -m unittest discover -s tests
+  - name: foundation_engine_smoke
+    command: python foundation_train.py --config config/foundation_engine_example.yaml --workspace-dir results/ai_loop/foundation_engine_smoke
+  - name: benchmark_plot_smoke
+    command: python benchmark_plot.py --output-dir results/ai_loop/plots

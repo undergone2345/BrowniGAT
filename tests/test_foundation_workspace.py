@@ -29,6 +29,7 @@ class FoundationWorkspaceTests(unittest.TestCase):
             self.assertGreater(workspace["summary"]["num_modalities"], 0)
             self.assertGreater(workspace["summary"]["num_enabled_tasks"], 0)
             self.assertGreater(len(workspace["sampling_plan"]), 0)
+            self.assertIn("partition_summary", workspace["summary"])
 
     def test_canonical_bundle_loader_reads_exported_modalities(self):
         real_cfg = load_config("config/real_data_example.yaml")

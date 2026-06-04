@@ -42,16 +42,43 @@ foundation:
     shuffle_tasks_each_epoch: false
     repeat_strategy: round_robin
   dataloader:
-    num_workers: 0
+    num_workers: 2
     pin_memory: false
     shuffle: false
     prefetch_factor: null
+  distributed:
+    world_size: 1
+    global_rank: 0
+    local_rank: 0
+    backend: single_process
+    gradient_sync: false
+  data_partitioning:
+    max_partition_size: 4
+  curriculum:
+    phases:
+      - name: structure_warmup
+        start_epoch: 1
+        end_epoch: 1
+        tasks:
+          - masked_node_modeling
+          - masked_edge_modeling
+      - name: multimodal_mix
+        start_epoch: 2
+        tasks:
+          - masked_node_modeling
+          - masked_edge_modeling
+          - cross_modal_alignment
+          - perturbation_conditioning
+          - spatial_context_prediction
   validation:
     max_batches_per_task: 2
   early_stopping:
     patience: 0
     min_delta: 0.0
     mode: min
+  checkpoint_retention:
+    keep_last_per_phase: 1
+    keep_best: true
   training:
     epochs: 3
     checkpoint_every: 1
