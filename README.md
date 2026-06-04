@@ -115,6 +115,13 @@ The repository now also starts to distinguish two different infrastructure layer
 - Added worker-aware sampling sequences so dataloader workers can consume disjoint task-step schedules.
 - Added stage-wise checkpoint retention so engine runs can keep the last checkpoint per curriculum phase plus best checkpoints.
 
+### Version 14: Engine Control Plane
+
+- Added a manifest-aware stage planner that turns curriculum phases and partition summaries into schedulable stages.
+- Added a run queue schema with per-stage workspaces, retry budgets, and queue dependencies.
+- Added failure recovery policies that decide whether a failed stage should retry and which checkpoint to resume from.
+- Added an experiment scheduler entrypoint that writes scheduler manifests, queue files, event logs, and stage summaries.
+
 ## Repository Layout
 
 ```text
@@ -263,6 +270,12 @@ Run the more engine-oriented training stack:
 
 ```bash
 python foundation_train.py --config config/foundation_engine_example.yaml
+```
+
+Run the experiment scheduler that materializes a stage plan, run queue, and recovery-aware execution flow:
+
+```bash
+python foundation_schedule.py --config config/foundation_engine_example.yaml --workspace-dir results/foundation_scheduler
 ```
 
 Run a repeatable engineering loop until local midnight or another deadline:
@@ -499,6 +512,8 @@ It now also includes:
 - worker-aware sampler sequencing
 - stage-wise checkpoint retention policies
 - repeatable AI loop automation with deadline-based execution
+- manifest-aware stage planning and queue orchestration
+- failure recovery policies and scheduler event logs
 
 ## Baseline Comparison
 
@@ -577,6 +592,7 @@ The `tests/` directory focuses on maintenance-friendly checks that do not requir
 - curriculum scheduling, event log, and checkpoint catalog testing
 - sharding, manifest partitioning, worker-aware sampling, and retention testing
 - deadline parsing and AI loop lifecycle testing
+- scheduler planning, retry, and queue execution testing
 
 ## AI Loop
 
@@ -597,6 +613,18 @@ Typical usage:
 ```bash
 python scripts/ai_loop.py --config config/ai_loop_example.yaml --deadline tonight_24
 ```
+
+## Scheduler Layer
+
+The repository now includes a control-plane layer above the foundation trainer.
+
+This layer is intended to look more like a real training engine orchestrator:
+
+- stage planning from the pretraining manifest and curriculum phases
+- queue materialization for stage-by-stage execution
+- per-stage workspaces and checkpoint handoff between queued runs
+- retry-oriented failure recovery using latest or best checkpoints
+- scheduler artifacts such as `scheduler_plan.json`, `run_queue.json`, `scheduler_summary.json`, and `scheduler_events.jsonl`
 
 ## Suggested Next Extensions
 

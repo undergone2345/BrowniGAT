@@ -55,6 +55,15 @@ DEFAULT_CONFIG = {
             "keep_last_per_phase": 1,
             "keep_best": True,
         },
+        "experiment_scheduler": {
+            "enabled": False,
+            "execute_queue": True,
+            "default_stage_epochs": 1,
+            "failure_recovery": {
+                "max_retries": 1,
+                "resume_strategy": "latest",
+            },
+        },
         "validation": {
             "max_batches_per_task": 2,
         },

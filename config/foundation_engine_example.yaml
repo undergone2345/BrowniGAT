@@ -86,6 +86,13 @@ foundation:
   checkpoint_retention:
     keep_last_per_phase: 1
     keep_best: true
+  experiment_scheduler:
+    enabled: false
+    execute_queue: true
+    default_stage_epochs: 1
+    failure_recovery:
+      max_retries: 1
+      resume_strategy: latest
   training:
     epochs: 2
     checkpoint_every: 1
