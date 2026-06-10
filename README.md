@@ -1,3 +1,8 @@
+[![CI](https://github.com/undergone2345/BrowniGAT/actions/workflows/tests.yml/badge.svg)](https://github.com/undergone2345/BrowniGAT/actions/workflows/tests.yml)
+[![Release](https://img.shields.io/github/v/release/undergone2345/BrowniGAT)](https://github.com/undergone2345/BrowniGAT/releases)
+[![License](https://img.shields.io/github/license/undergone2345/BrowniGAT)](https://github.com/undergone2345/BrowniGAT/blob/main/LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue)](https://www.python.org/)
+
 # BrowniGAT
 
 BrowniGAT is an open biomedical AI infrastructure repository that has grown beyond a single PPI target-ranking pipeline.
@@ -332,6 +337,45 @@ Supporting documents:
 
 - application framing: `docs/APPLICATIONS.md`
 - demo command map: `docs/DEMO_WORKFLOWS.md`
+- notebook walkthrough: `notebooks/demo_analysis.ipynb`
+
+## Results Preview
+
+### Sample Benchmark Summary
+
+The benchmark layer compares graph-learning and topology-based baselines with rank-oriented retrieval metrics.
+
+| Method | MRR | HitAtK | MeanRank |
+|---|---:|---:|---:|
+| gat | 0.70 | 1.00 | 1.50 |
+| gcn | 0.50 | 0.80 | 2.10 |
+
+### Sample Scheduler Artifact Tree
+
+```text
+results/readme_demo_scheduler/
+|-- scheduled_runs/
+|   |-- stage_01/
+|   |   |-- checkpoints/
+|   |   |-- events/
+|   |   |-- artifact_index.json
+|   |   `-- training_summary.json
+|   `-- stage_02/
+|       |-- artifact_index.json
+|       `-- training_summary.json
+`-- scheduler/
+    |-- run_queue.json
+    |-- scheduler_events.jsonl
+    |-- scheduler_plan.json
+    `-- scheduler_summary.json
+```
+
+### Sample Synthetic Biology Construct Preview
+
+| construct_name | multiplex_module | targets | editors | pathway_focus | assembly_strategy |
+|---|---|---|---|---|---|
+| BrowniBuild_01 | module_01 | MITF,TYR,PPARGC1A | CRISPRi | melanogenesis | GoldenGate |
+| BrowniBuild_02 | module_02 | UCP1,MLANA,DCT | CRISPRa,CRISPRi | melanogenesis | GoldenGate |
 
 ## Configuration Overview
 

@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "brownigat"
+version = "0.5.0"
+description = "Multimodal biomedical graph platform, foundation training engine, scheduler control plane, and synthetic biology design layer."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [
+  { name = "BrowniGAT contributors" }
+]
+keywords = [
+  "biomedical-ai",
+  "graph-neural-networks",
+  "multimodal-biology",
+  "foundation-models",
+  "synthetic-biology"
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+  "pandas>=1.3",
+  "numpy>=1.21",
+  "scikit-learn>=1.0",
+  "matplotlib>=3.4",
+  "networkx>=2.6",
+  "PyYAML>=6.0",
+  "torch>=1.10",
+  "torch-geometric>=2.0",
+  "tabulate>=0.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/undergone2345/BrowniGAT"
+Repository = "https://github.com/undergone2345/BrowniGAT"
+Issues = "https://github.com/undergone2345/BrowniGAT/issues"
+Releases = "https://github.com/undergone2345/BrowniGAT/releases"
+
+[tool.setuptools]
+py-modules = [
+  "main",
+  "foundation_main",
+  "foundation_train",
+  "foundation_schedule",
+  "ingest_multimodal_data",
+  "vnext_main",
+  "synbio_main",
+  "benchmark_plot",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["utils*", "model*", "tasks*"]
+namespaces = true
